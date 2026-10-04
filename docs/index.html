@@ -120,7 +120,7 @@
   a { color: var(--site-primary-text); }
   a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--site-primary-text); outline-offset: 2px; }
   img { max-width: 100%; height: auto; }
-  .wrap { width: 90%; margin: 0 auto; }
+  .wrap { width: 90%; max-width: 1200px; margin: 0 auto; }
   .skip { position: absolute; left: -999px; top: 8px; background: var(--site-card); color: var(--site-fg); padding: 10px 16px; border-radius: 8px; z-index: 20; }
   .skip:focus { left: 8px; }
   h1, h2, h3 { line-height: 1.2; margin: 0; }
@@ -132,7 +132,10 @@
   .brand b { font: 700 18px var(--mono); letter-spacing: .08em; }
   .brand b span { color: var(--site-primary); }
 
-  .hero { padding: 40px 0 72px; }
+  .hero { padding: 40px 0 72px; --escala: .72; }
+  @media (min-height: 880px) { .hero { --escala: .82; } }
+  @media (min-height: 1000px) { .hero { --escala: 1; } }
+  @media (max-height: 760px) { .hero { --escala: .62; } }
   .hero-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; align-items: center; }
   .hero h1 { font-size: clamp(34px, 5vw, 58px); letter-spacing: -1px; margin-bottom: 18px; }
   .hero h1 span { color: var(--site-primary); }
@@ -144,15 +147,20 @@
   .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0 0; padding: 0; list-style: none; }
   .tags li { font: 12px var(--mono); color: var(--site-fg-2); border: 1px solid var(--site-line); border-radius: 999px; padding: 4px 12px; }
 
-  .aparelho { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .aparelho { display: flex; justify-content: center; }
   .phone-slot { width: 100%; display: flex; justify-content: center; }
+  .phone-slot.ao-vivo { position: relative; width: calc(414px * var(--escala)); height: calc(868px * var(--escala)); }
+  .phone-slot.ao-vivo .phone { position: absolute; top: 0; left: 0; width: 390px; max-width: none; flex: none; transform: scale(var(--escala)); transform-origin: top left; }
   .phone-link { display: block; width: 100%; max-width: 414px; }
   .phone-link img { display: block; width: 100%; max-width: 414px; height: auto; }
-  .phone-controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
-  .phone-controls[hidden] { display: none; }
-  .phone-controls button, .phone-controls a { min-width: 44px; min-height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--site-line); background: var(--site-card); color: var(--site-fg-2); font: 14px var(--mono); cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
-  .phone-controls button[aria-pressed="true"] { border-color: var(--site-primary); color: var(--site-primary-text); }
-  .phone-controls a { color: var(--site-primary-text); }
+  .escolha { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; margin: 28px 0 0; }
+  .escolha[hidden] { display: none; }
+  .grupo { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .grupo-rotulo { font: 600 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--site-muted); margin-right: 4px; }
+  .grupo button, .tela-cheia { min-width: 44px; min-height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--site-line); background: var(--site-card); color: var(--site-fg-2); font: 400 14px var(--mono); cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+  .grupo button[aria-pressed="true"] { border-color: var(--site-primary); color: var(--site-primary-text); font-weight: 700; }
+  .amostra { width: 16px; height: 16px; border-radius: 50%; flex: none; box-shadow: 0 0 0 1px var(--site-fg-2); }
+  .tela-cheia { color: var(--site-primary-text); }
 
 
   section + section { border-top: 1px solid var(--site-line); }
@@ -220,8 +228,12 @@
     .tabela [role="row"] { grid-template-columns: minmax(0, 1fr); gap: 4px; }
     .lightbox { padding: 56px 8px; }
   }
+  @media (min-width: 900px) {
+    .hero h1 { font-size: clamp(30px, 4.2vw, 58px); }
+  }
   @media (min-width: 1100px) {
-    .hero-grid { grid-template-columns: minmax(0, 1fr) 440px; gap: 64px; }
+    .hero-grid { grid-template-columns: minmax(0, 1fr) calc(414px * var(--escala)); gap: 64px; }
+    .hero h1 { font-size: clamp(28px, 2.7vw, 34px); }
   }
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
@@ -246,7 +258,7 @@
     <div class="wrap hero-grid">
       <div>
         <div class="eyebrow">Design system mobile · React Native</div>
-        <h1 id="titulo">Design system mobile em React Native, <span>pronto para usar</span>.</h1>
+        <h1 id="titulo">Design system mobile em React Native,<br><span>pronto para usar</span>.</h1>
         <p>A base do seu próximo app: 64 componentes de UI, 3 modelos de marca, 4 paletas e telas prontas, em React Native (Expo) com Expo Router e NativeWind. Licença MIT, código completo no GitHub, uso comercial permitido.</p>
         <div class="cta">
           <a class="btn primary ver-demo" href="demo/">Ver demo: o app rodando</a>
@@ -254,16 +266,26 @@
           <a class="btn" href="#instalacao">Instalar</a>
         </div>
         <ul class="tags"><li>React Native</li><li>Expo</li><li>NativeWind</li><li>MIT</li></ul>
+        <div class="escolha" hidden>
+          <div class="grupo" role="group" aria-label="Modelo">
+            <span class="grupo-rotulo" aria-hidden="true">Modelo</span>
+            <button type="button" data-modelo="T1" aria-label="Modelo Safira" aria-pressed="true">Safira</button>
+            <button type="button" data-modelo="T2" aria-label="Modelo Equilíbrio" aria-pressed="false">Equilíbrio</button>
+            <button type="button" data-modelo="T3" aria-label="Modelo Aurora" aria-pressed="false">Aurora</button>
+          </div>
+          <div class="grupo" role="group" aria-label="Paleta">
+            <span class="grupo-rotulo" aria-hidden="true">Paleta</span>
+            <button type="button" data-paleta="C1" data-cor="#0b6fe0" aria-label="Paleta Safira" aria-pressed="true"><span class="amostra" aria-hidden="true" style="background:#0b6fe0"></span>Safira</button>
+            <button type="button" data-paleta="C2" data-cor="#5b3fd1" aria-label="Paleta Equilíbrio" aria-pressed="false"><span class="amostra" aria-hidden="true" style="background:#5b3fd1"></span>Equilíbrio</button>
+            <button type="button" data-paleta="C3" data-cor="#0f766e" aria-label="Paleta Aurora" aria-pressed="false"><span class="amostra" aria-hidden="true" style="background:#0f766e"></span>Aurora</button>
+            <button type="button" data-paleta="C4" data-cor="#2e414d" aria-label="Paleta Ardósia" aria-pressed="false"><span class="amostra" aria-hidden="true" style="background:#2e414d"></span>Ardósia</button>
+          </div>
+          <a class="tela-cheia" href="demo/">Abrir em tela cheia</a>
+        </div>
       </div>
       <div class="aparelho">
         <div id="phone-slot" class="phone-slot">
           <a class="phone-link" href="demo/"><img src="images/safira-home-mobile.webp" width="414" height="868" alt="Tela inicial do Rendra App em um celular. Abrir a demo."></a>
-        </div>
-        <div class="phone-controls" role="group" aria-label="Escolher modelo" hidden>
-          <button type="button" aria-pressed="true">Modelo Safira</button>
-          <button type="button" aria-pressed="false">Modelo Equilíbrio</button>
-          <button type="button" aria-pressed="false">Modelo Aurora</button>
-          <a href="demo/">Abrir em tela cheia</a>
         </div>
       </div>
     </div>
@@ -464,14 +486,15 @@ npm start</code></pre></div>
   const desktop = matchMedia('(min-width: 900px)');
   const poucoDado = matchMedia('(prefers-reduced-data: reduce)').matches;
   const slot = document.getElementById('phone-slot');
-  const controles = document.querySelector('.phone-controls');
+  const escolha = document.querySelector('.escolha');
   const original = slot.innerHTML;
-  const codigos = ['T1-C1', 'T2-C1', 'T3-C1'];
+  const estado = { T: 'T1', C: 'C1' };
+  const endereco = () => `demo/painel?codigo=${estado.T}-${estado.C}-N1`;
   let frame = null;
   function montar() {
     if (!desktop.matches || poucoDado || frame) return;
     frame = Object.assign(document.createElement('iframe'), {
-      name: 'demo', loading: 'lazy', src: 'demo/?codigo=T1-C1',
+      name: 'demo', loading: 'lazy', src: endereco(),
       title: 'Demonstração do Rendra App, vitrine de componentes',
     });
     const aparelho = document.createElement('div');
@@ -479,18 +502,21 @@ npm start</code></pre></div>
     aparelho.setAttribute('role', 'group');
     aparelho.setAttribute('aria-label', 'Rendra App em execução');
     aparelho.append(frame);
+    slot.classList.add('ao-vivo');
     slot.replaceChildren(aparelho);
-    controles.hidden = false;
+    escolha.hidden = false;
   }
   function desmontar() {
     if (desktop.matches || !frame) return;
     frame = null;
+    slot.classList.remove('ao-vivo');
     slot.innerHTML = original;
-    controles.hidden = true;
+    escolha.hidden = true;
   }
-  controles.querySelectorAll('button').forEach((b, i) => b.addEventListener('click', () => {
-    controles.querySelectorAll('button').forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
-    if (frame) frame.src = `demo/?codigo=${codigos[i]}`;
+  escolha.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+    if (b.dataset.modelo) estado.T = b.dataset.modelo; else estado.C = b.dataset.paleta;
+    b.parentElement.querySelectorAll('button').forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+    if (frame) frame.src = endereco();
   }));
   addEventListener('load', montar);
   desktop.addEventListener('change', () => { montar(); desmontar(); });

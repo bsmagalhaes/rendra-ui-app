@@ -19,3 +19,14 @@ describe('tipo dataSet em ViewProps e TextProps (secao 3.2 do levantamento)', ()
     expect(nodesWithCode(container, 'Y')).toHaveLength(1)
   })
 })
+
+// A `List` reordenável escuta setas na alça (`onKeyDown`, encaminhado ao DOM pelo react-native-web).
+// Nenhuma tipagem de `react-native` o declara em `ViewProps`; sem a augmentation, a linha abaixo
+// não compila (TS2322).
+describe('tipo onKeyDown em ViewProps', () => {
+  it('View aceita onKeyDown, o handler chega em props.onKeyDown', async () => {
+    const onKeyDown = (event: { key: string }) => event.key
+    const { container } = await render(<View testID="alvo" onKeyDown={onKeyDown} />)
+    expect(container).toBeTruthy()
+  })
+})

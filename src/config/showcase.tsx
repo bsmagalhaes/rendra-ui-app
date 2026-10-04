@@ -47,6 +47,7 @@ import {
   Avatar,
   AvatarGroup,
   List,
+  type ListItem,
   StatCard,
   Accordion,
   Tabs,
@@ -614,16 +615,12 @@ function AvatarExample() {
 }
 
 function ListExample() {
-  return (
-    <List
-      scrollEnabled={false}
-      items={[
-        { id: '1', title: 'Ana Souza', description: 'ana@exemplo.com', href: '/componentes/exibicao', tone: 'success' },
-        { id: '2', title: 'Bruno Lima', description: 'bruno@exemplo.com', onPress: () => {} },
-        { id: '3', title: 'Carla Dias', description: 'carla@exemplo.com', tone: 'error' },
-      ]}
-    />
-  )
+  const [items, setItems] = useState<ListItem[]>([
+    { id: '1', title: 'Ana Souza', description: 'ana@exemplo.com', href: '/componentes/exibicao', tone: 'success' },
+    { id: '2', title: 'Bruno Lima', description: 'bruno@exemplo.com', onPress: () => {} },
+    { id: '3', title: 'Carla Dias', description: 'carla@exemplo.com', tone: 'error' },
+  ])
+  return <List scrollEnabled={false} items={items} onReorder={setItems} />
 }
 
 function StatCardExample() {
@@ -1254,9 +1251,9 @@ export const showcaseGroups: ShowcaseGroup[] = [
       },
       {
         name: 'List',
-        description: 'Lista de itens com navegação, ação ou só leitura.',
+        description: 'Lista de itens com navegação, ação ou só leitura, e reordenável pela alça de cada linha.',
         render: () => <ListExample />,
-        codes: codigosPara(['List']),
+        codes: codigosPara(['List'], ['List', { sortable: true }]),
       },
       {
         name: 'StatCard',

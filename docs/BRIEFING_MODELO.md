@@ -156,7 +156,7 @@ O código de catálogo, como `BTN-001`, diz qual componente e qual variante; o c
 | Código recebido por SMS ou e-mail | `OTP-001` Código de verificação | |
 | Tela cheia para editar sem sair do fluxo | `GAV-001` Gaveta | |
 | Ação no aparelho fora da tela | `DDM-001` Menu suspenso, abre como folha | |
-| Lista de itens | `LIST-001` Lista | |
+| Lista de itens | `LIST-001` Lista | `LIST-002` Lista reordenável (com `onReorder`: alça de arraste e menu Mover) |
 | Gráfico de dados (import de `@rendra-ui/app/chart`) | `CHT-002` Gráfico de barras | `CHT-001` linha, `CHT-003` área, `CHT-004` pizza, `CHT-005` combinado, `CHT-006` velocímetro de meta, `CHT-007` funil |
 | Carregando | `SPIN-001` Indicador de carregamento | `SKEL-001` Esqueleto de carregamento, `PROG-001` Barra de progresso |
 | Rodapé "Feito com Rendra" | `CRED-001` Crédito Feito com Rendra | Pode ser removido ou levado para uma tela Sobre |
@@ -209,7 +209,7 @@ Demais componentes do catálogo:
 
 ## Bloco 9: Dados
 
-Pergunta aberta. O que o app guarda (entidades e campos principais). Listagens: o que aparece em cada linha, filtros e ações; no app a listagem é uma lista de cartões (`LIST-001`, `CARD-001`), não uma tabela. Formulários longos: viram uma tela em seções (`FORM-002`); assistente passo a passo fica fora do escopo.
+Pergunta aberta. O que o app guarda (entidades e campos principais). Listagens: o que aparece em cada linha, filtros e ações, e se a pessoa escolhe a ordem dos itens (lista reordenável, `LIST-002`, com a ordem gravada pelo app); no app a listagem é uma lista de cartões (`LIST-001`, `CARD-001`), não uma tabela. Formulários longos: viram uma tela em seções (`FORM-002`) ou um assistente em etapas (`WIZ-001`).
 
 ## Bloco 10: Acesso e integrações
 

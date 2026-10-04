@@ -2,8 +2,7 @@
  * Catalogo de codigos de componente do Rendra App, paridade com o web
  * (`https://github.com/bsmagalhaes/rendra-ui-web`, `src/catalog/components.ts`).
  * O mesmo codigo significa o mesmo componente e a mesma variante em web e app (padrao dos
- * produtos Rendra, secao 4.5). `LIST-002` (lista reordenavel) fica fora daqui: entra junto do
- * `onReorder`, em rodada futura.
+ * produtos Rendra, secao 4.5). `LIST-002` (lista reordenavel) entra junto do `onReorder`, na 1.4.0.
  */
 
 export interface ComponentCatalogEntry {
@@ -74,6 +73,7 @@ export const CATALOG: ComponentCatalogEntry[] = [
   { code: 'KANB-001', name: 'Quadro kanban', component: 'Kanban', file: 'components/ui/kanban.tsx', variantProps: {}, whenToUse: 'Para um funil de etapas com cartões que se movem entre colunas.', isDefault: true },
   { code: 'KANB-002', name: 'Quadro kanban com destinos de arraste', component: 'Kanban', file: 'components/ui/kanban.tsx', variantProps: { hasDropTargets: true }, whenToUse: 'Quando o card pode ir para uma ação além de outra coluna (ex.: "Marcar como ganho"), mostrada no menu "Mover para".' },
   { code: 'LIST-001', name: 'Lista', component: 'List', file: 'components/ui/list.tsx', variantProps: {}, whenToUse: 'Para linhas simples com início, título, descrição e fim, navegáveis ou não.', isDefault: true },
+  { code: 'LIST-002', name: 'Lista reordenável', component: 'List', file: 'components/ui/list.tsx', variantProps: { sortable: true }, whenToUse: 'Quando a pessoa pode mudar a ordem das linhas, por arraste ou pelo menu Mover. Escreva com a prop `onReorder` (`sortable` é só a chave interna deste catálogo, não é prop da List).' },
   { code: 'MOD-001', name: 'Modal de confirmação', component: 'Modal', file: 'components/ui/modal.tsx', variantProps: { type: 'confirm' }, whenToUse: 'Para confirmar uma ação com uma principal e uma de cancelar; type="destructive" usa o mesmo código, porque só muda a cor.', isDefault: true },
   { code: 'MOD-002', name: 'Modal de formulário', component: 'Modal', file: 'components/ui/modal.tsx', variantProps: { type: 'form' }, whenToUse: 'Para um formulário de até 3 campos simples, sem sair da tela atual.' },
   { code: 'MOD-003', name: 'Modal informativo', component: 'Modal', file: 'components/ui/modal.tsx', variantProps: { type: 'info' }, whenToUse: 'Para só informar algo, sem decisão a tomar: um botão só, de largura total, que fecha o modal.' },

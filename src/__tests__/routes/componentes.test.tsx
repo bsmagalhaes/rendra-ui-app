@@ -231,6 +231,16 @@ describe('/componentes/[slug]', () => {
     expect(await context.findByText('BrandLogo')).toBeTruthy()
   })
 
+  it('a List da vitrine é reordenável: o menu Mover muda a ordem visível das linhas', async () => {
+    await renderRouter(fullRoutes(), { initialUrl: '/componentes/exibicao' })
+    const ordem = () => screen.getAllByRole('button', { name: /^Reordenar / }).map((no) => String(no.props.accessibilityLabel))
+    expect(await screen.findByRole('button', { name: 'Reordenar Ana Souza' })).toBeTruthy()
+    expect(ordem()).toEqual(['Reordenar Ana Souza', 'Reordenar Bruno Lima', 'Reordenar Carla Dias'])
+    await fireEvent.press(screen.getByRole('button', { name: 'Mover Ana Souza' }))
+    await fireEvent.press(screen.getByRole('menuitem', { name: 'Mover para baixo' }))
+    expect(ordem()).toEqual(['Reordenar Bruno Lima', 'Reordenar Ana Souza', 'Reordenar Carla Dias'])
+  })
+
   it('mostra o selo do codigo do catalogo ao lado do titulo (Tarefa 1.3, secao 2.1 e 3.3.4 do levantamento)', async () => {
     const acoes = await renderRouter(fullRoutes(), { initialUrl: '/componentes/acoes' })
     expect(await acoes.findByText('BTN-001')).toBeTruthy()

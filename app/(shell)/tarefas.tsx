@@ -37,13 +37,22 @@ export default function Tarefas() {
   const { brand } = useBrand()
   useDocumentTitle(`Tarefas · ${brand.productName}`)
   const [busca, setBusca] = useState('')
+  // Ordem das tarefas na tela; o reordenar mexe aqui e a busca só filtra por cima dela.
+  const [ordem, setOrdem] = useState<Tarefa[]>(tasks)
   const [concluidas, setConcluidas] = useState<ReadonlySet<number>>(
     () => new Set(tasks.filter((t) => t.concluida).map((t) => t.id)),
   )
   const [selecionadas, setSelecionadas] = useState<ReadonlySet<number>>(new Set())
 
   const termo = busca.trim().toLowerCase()
-  const visiveis = tasks.filter((t) => !termo || t.titulo.toLowerCase().includes(termo))
+  const visiveis = ordem.filter((t) => !termo || t.titulo.toLowerCase().includes(termo))
+
+  // A `List` devolve a lista inteira na nova ordem. Com a busca ativa o reordenar fica desligado
+  // (as linhas ocultas ficariam fora da conta), então aqui `lista` sempre traz todas as tarefas.
+  function reordenar(lista: { id: string }[]) {
+    const porId = new Map(ordem.map((t) => [String(t.id), t]))
+    setOrdem(lista.map((linha) => porId.get(linha.id)!))
+  }
 
   function alternarSelecao(id: number, marcada: boolean) {
     setSelecionadas((atual) => {
@@ -88,6 +97,7 @@ export default function Tarefas() {
         <Text className="text-sm text-muted-foreground">{`Selecionadas: ${selecionadas.size}`}</Text>
         <List
           scrollEnabled={false}
+          onReorder={termo ? undefined : reordenar}
           empty={<EmptyState title="Nenhuma tarefa encontrada" description="Nenhuma tarefa combina com a busca." />}
           items={visiveis.map((t) => {
             const concluida = concluidas.has(t.id)

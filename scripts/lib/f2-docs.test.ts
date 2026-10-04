@@ -123,13 +123,74 @@ suite('CHANGELOG 1.1.0 fechado', () => {
   })
 })
 
-suite('CHANGELOG 1.3.0 fechado (Sincronização 2)', () => {
-  const versao = entrada('1.3.0', '1.2.0')
-  it('a versão gravada é a 1.3.0 (Sincronização 2) nos dois manifestos', () => {
+suite('CHANGELOG 1.4.0 fechado (List.onReorder)', () => {
+  const versao = entrada('1.4.0', '1.3.0')
+  it('a versão gravada é a 1.4.0 nos dois manifestos', () => {
     const pacote = JSON.parse(ler('package.json')) as { version: string }
     const app = JSON.parse(ler('app.json')) as { expo: { version: string } }
-    expect(pacote.version).toBe('1.3.0')
-    expect(app.expo.version).toBe('1.3.0')
+    expect(pacote.version).toBe('1.4.0')
+    expect(app.expo.version).toBe('1.4.0')
+  })
+
+  it('descreve a List reordenável e o que não foi provado', () => {
+    for (const item of ['List.onReorder', 'itemLabel', 'LIST-002', 'Mover', 'moveUp', 'aria-live', 'scrollEnabled', 'iOS']) {
+      expect(versao).toContain(item)
+    }
+  })
+
+  it('avisa que onReorder recebe só as linhas de items (busca ou filtro)', () => {
+    expect(versao).toContain('onReorder` recebe só as linhas passadas em `items`')
+    expect(versao).toContain('busca ou filtro ativo')
+  })
+
+  it('registra a simulação dos leigos aprovada para esta versão', () => {
+    expect(versao).toMatch(/Simulação dos dois leigos aprovada em 04\/10\/2026/)
+  })
+
+  it('não cita o processo interno', () => {
+    expect(versao).not.toMatch(/processo\/|docs\/superpowers/)
+  })
+})
+
+suite('migração 1.4.0: raiz de gestos, README e briefing da List reordenável', () => {
+  it.each([
+    ['README.md', readme],
+    ['docs/COMO_APLICAR.md', comoAplicar],
+    ['docs/PROMPT_MIGRACAO.md', promptMigracao],
+  ])('%s manda montar o GestureHandlerRootView (List, Slider, ImageViewer)', (_nome, texto) => {
+    expect(texto).toContain('GestureHandlerRootView')
+  })
+
+  it('o JSDoc da List avisa do filtro e não cita arquivos fora do pacote', () => {
+    const jsdoc = ler('src/components/ui/list.tsx')
+    expect(jsdoc).toContain('onReorder` recebe só as linhas passadas em `items`')
+    expect(jsdoc).toContain('onReorder={undefined}')
+    expect(jsdoc).not.toMatch(/tarefas\.tsx|PROMPT_MIGRACAO/)
+  })
+
+  it('o catálogo descreve LIST-002 com a prop onReorder', () => {
+    const catalogo = ler('src/catalog/components.ts')
+    expect(catalogo).toContain('Escreva com a prop `onReorder`')
+  })
+
+  it('o README diz que a List reordena', () => {
+    expect(readme).toContain('List (reordenável com `onReorder`')
+  })
+
+  it('o briefing pergunta pela ordem dos itens e cita o Wizard', () => {
+    const briefing = ler('docs/BRIEFING_MODELO.md')
+    expect(briefing).toContain('escolhe a ordem dos itens')
+    expect(briefing).toContain('WIZ-001')
+    expect(briefing).not.toContain('assistente passo a passo fica fora do escopo')
+  })
+})
+
+suite('CHANGELOG 1.3.0 fechado (Sincronização 2)', () => {
+  const versao = entrada('1.3.0', '1.2.0')
+  it('a entrada 1.3.0 existe e leva os sete componentes da Sincronização 2', () => {
+    for (const item of ['Rating', 'Checklist', 'Pagination', 'DataToolbar', 'Table', 'Stepper', 'Wizard']) {
+      expect(versao).toContain(item)
+    }
   })
 
   it('registra a simulação dos leigos aprovada para esta versão', () => {

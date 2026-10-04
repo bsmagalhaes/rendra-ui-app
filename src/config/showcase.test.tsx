@@ -85,6 +85,11 @@ describe('showcaseGroups', () => {
     expect(codigos('exibicao', 'Wizard')).toEqual(['WIZ-001'])
   })
 
+  it('a List mostra os codigos LIST-001 e LIST-002 (o exemplo ja traz o onReorder)', () => {
+    const lista = showcaseGroups.find((g) => g.slug === 'exibicao')!.entries.find((e) => e.name === 'List')!
+    expect(lista.codes).toEqual(['LIST-001', 'LIST-002'])
+  })
+
   it('planejamento tem o Calendar e os dois Kanban o ImageViewer e o atendimento, com os codigos CAL-001, KANB-001, KANB-002, IMG-001 e CHAT-001 a CHAT-003', () => {
     const grupo = showcaseGroups.find((g) => g.slug === 'planejamento')
     expect(grupo?.entries.map((e) => e.name)).toEqual(['Calendar', 'Kanban', 'Kanban com destinos', 'ImageViewer', 'Atendimento (chat)'])

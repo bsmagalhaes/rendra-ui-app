@@ -415,3 +415,36 @@ test('componentes/formulario: RichTextEditor no navegador cai no modo HTML e dig
   await page.getByLabel('Código HTML do conteúdo').fill('<p>curto</p>')
   await expect(page.getByText('Conteúdo: 12 caracteres')).toBeVisible()
 })
+
+// Correção 11 do parecer (List.onReorder): em /tarefas a linha tem alça, Mover, marcador, selo e
+// menu. O título fica em linha própria, de largura inteira (até duas linhas, sem corte), e a data
+// nunca quebra no meio. Roda em 360 e 390 (matriz de projetos).
+test('/tarefas: título legível e data sem quebra no meio com a lista reordenável', async ({ page }, testInfo) => {
+  const codigo = (testInfo.project.metadata as { codigo?: string })?.codigo ?? 'T1-C1'
+  await page.goto(`tarefas?codigo=${codigo}`)
+  await page.getByTestId(`rendra-${codigo}`).waitFor()
+  await semSplash(page)
+  const alcas = page.getByRole('button', { name: /^Reordenar / })
+  expect(await alcas.count()).toBeGreaterThan(5)
+  const titulos = await alcas.evaluateAll((nos) => nos.map((no) => (no.getAttribute('aria-label') ?? '').replace('Reordenar ', '')))
+  const largura = page.viewportSize()!.width
+  for (const titulo of titulos) {
+    const el = page.getByText(titulo, { exact: true })
+    const caixa = (await el.boundingBox())!
+    const info = await el.evaluate((no) => {
+      const estilo = getComputedStyle(no)
+      return { corte: no.scrollHeight > no.clientHeight + 1, linha: parseFloat(estilo.lineHeight) }
+    })
+    expect(info.corte, `${titulo}: texto cortado`).toBe(false)
+    expect(caixa.height, `${titulo}: no máximo duas linhas`).toBeLessThanOrEqual(info.linha * 2 + 1)
+    // Largura inteira da linha: o título não divide a linha com a alça nem com o menu.
+    expect(caixa.width, `${titulo}: largura`).toBeGreaterThanOrEqual(largura - 32 - 24)
+  }
+  const datas = page.getByText(/^\d{2}\/\d{2}\/\d{4}$/)
+  const total = await datas.count()
+  expect(total).toBeGreaterThan(5)
+  for (let i = 0; i < total; i++) {
+    const info = await datas.nth(i).evaluate((no) => ({ altura: no.getBoundingClientRect().height, linha: parseFloat(getComputedStyle(no).lineHeight) }))
+    expect(info.altura, `data ${i} em uma linha só`).toBeLessThanOrEqual(info.linha + 1)
+  }
+})

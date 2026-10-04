@@ -84,7 +84,7 @@ const ARQUIVOS_REAIS_DE_COMPONENTE = [
 ]
 
 // Tabela literal copiada do Apendice A do veredito do Opus (46 entradas do Bloco 1, sem
-// LIST-002 e sem SPIN-001; SPIN-001 entra na Tarefa 8.1, achado C2), para provar paridade
+// SPIN-001; SPIN-001 entra na Tarefa 8.1, achado C2; LIST-002 entra com o `onReorder` na 1.4.0), para provar paridade
 // valor a valor, nao so a contagem.
 const TABELA_PARIDADE: [string, string, Record<string, unknown>, true | undefined][] = [
   ['ACRN-001', 'Accordion', {}, undefined],
@@ -131,6 +131,7 @@ const TABELA_PARIDADE: [string, string, Record<string, unknown>, true | undefine
   ['KANB-001', 'Kanban', {}, true],
   ['KANB-002', 'Kanban', { hasDropTargets: true }, undefined],
   ['LIST-001', 'List', {}, true],
+  ['LIST-002', 'List', { sortable: true }, undefined],
   ['MOD-001', 'Modal', { type: 'confirm' }, true],
   ['MOD-002', 'Modal', { type: 'form' }, undefined],
   ['MOD-003', 'Modal', { type: 'info' }, undefined],
@@ -203,6 +204,7 @@ describe('catalogo de componentes', () => {
     expect(resolveCatalogCode('Modal', { type: 'confirm' })).toBe('MOD-001')
     expect(resolveCatalogCode('Tabs', { variant: 'pill' })).toBe('ABA-002')
     expect(resolveCatalogCode('List', {})).toBe('LIST-001')
+    expect(resolveCatalogCode('List', { sortable: true })).toBe('LIST-002')
   })
 
   it('resolveCatalogCode lanca para componente sem entrada no catalogo, igual ao web (item M1 do veredito do Fable, quebra versionada na 1.0.0)', () => {
@@ -269,8 +271,8 @@ describe('catalogo de componentes', () => {
     ).toThrow(/mais de um isDefault/)
   })
 
-  it('paridade com o web: 66 entradas (as 49 da F1b e F2 e da Sincronizacao 1 mais CHT-001 a CHT-007, TLN-001, CAL-001, KANB-001, KANB-002, IMG-001, CHAT-001, CHAT-002, CHAT-003, RTE-001 e DOC-001 da F3) com code/component/variantProps/isDefault iguais (Apendice A do veredito do Opus)', () => {
-    expect(CATALOG).toHaveLength(74)
+  it('paridade com o web: 75 entradas (as 49 da F1b e F2 e da Sincronizacao 1, CHT-001 a CHT-007, TLN-001, CAL-001, KANB-001, KANB-002, IMG-001, CHAT-001, CHAT-002, CHAT-003, RTE-001 e DOC-001 da F3, as da Sincronizacao 2 e LIST-002 da 1.4.0) com code/component/variantProps/isDefault iguais (Apendice A do veredito do Opus)', () => {
+    expect(CATALOG).toHaveLength(75)
   })
 
   it.each(TABELA_PARIDADE)('%s (%s) casa code/component/variantProps/isDefault', (code, component, variantProps, isDefault) => {

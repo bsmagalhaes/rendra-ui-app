@@ -24,6 +24,15 @@ declare module 'react-native' {
      * (Bloco 5) e `data-rendra` (Bloco 6, seção 3.2 do levantamento da Sincronização 1).
      */
     dataSet?: Record<string, string | number>
+    /**
+     * @platform web
+     * Teclas na `View` focavel (`tabIndex`). O react-native-web encaminha `onKeyDown` ao DOM
+     * (`modules/forwardedProps`, `keyboardProps`); `PressableProps` estende `ViewProps` e herda a
+     * declaracao. Usado pela alca da `List` reordenavel (setas para cima e para baixo). So os
+     * tipos estritos do RN (`react-native-strict-api`) declaram `onKeyDown`; os tipos usados pelo
+     * app nao.
+     */
+    onKeyDown?: (event: { key: string; preventDefault: () => void }) => void
   }
 
   interface TextProps {

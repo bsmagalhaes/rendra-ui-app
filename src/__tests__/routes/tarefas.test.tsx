@@ -113,4 +113,46 @@ describe('tarefas', () => {
     await fireEvent.changeText(await screen.findByLabelText('Buscar tarefa'), 'zzzz')
     expect(await screen.findByText('Nenhuma tarefa encontrada')).toBeTruthy()
   })
+
+  describe('reordenar', () => {
+    const titulos = () =>
+      screen.getAllByRole('button', { name: /^Reordenar / }).map((no) => String(no.props.accessibilityLabel).replace('Reordenar ', ''))
+
+    it('o menu Mover para baixo na primeira tarefa troca a ordem visível', async () => {
+      await renderDemo(rotas, '/tarefas')
+      expect(await screen.findByRole('button', { name: `Reordenar ${tasks[0]!.titulo}` })).toBeTruthy()
+      expect(titulos().slice(0, 3)).toEqual([tasks[0]!.titulo, tasks[1]!.titulo, tasks[2]!.titulo])
+      await fireEvent.press(screen.getByRole('button', { name: `Mover ${tasks[0]!.titulo}` }))
+      await fireEvent.press(screen.getByRole('menuitem', { name: 'Mover para baixo' }))
+      expect(titulos().slice(0, 3)).toEqual([tasks[1]!.titulo, tasks[0]!.titulo, tasks[2]!.titulo])
+    })
+
+    it('o Mover convive com o menu Ações de X (rótulos distintos)', async () => {
+      await renderDemo(rotas, '/tarefas')
+      expect(await screen.findByRole('button', { name: `Mover ${tasks[0]!.titulo}` })).toBeTruthy()
+      expect(screen.getByRole('button', { name: `Ações de ${tasks[0]!.titulo}` })).toBeTruthy()
+    })
+
+    it('com a busca ativa, a alça e o Mover somem; limpar a busca devolve os dois e preserva a ordem', async () => {
+      await renderDemo(rotas, '/tarefas')
+      await fireEvent.press(await screen.findByRole('button', { name: `Mover ${tasks[0]!.titulo}` }))
+      await fireEvent.press(screen.getByRole('menuitem', { name: 'Mover para baixo' }))
+      await fireEvent.changeText(await screen.findByLabelText('Buscar tarefa'), tasks[2]!.titulo)
+      expect((await screen.findAllByText(tasks[2]!.titulo)).length).toBeGreaterThan(0)
+      expect(screen.queryByRole('button', { name: /^Reordenar / })).toBeNull()
+      expect(screen.queryByRole('button', { name: /^Mover / })).toBeNull()
+      await fireEvent.changeText(screen.getByLabelText('Buscar tarefa'), '')
+      expect(await screen.findByRole('button', { name: `Reordenar ${tasks[0]!.titulo}` })).toBeTruthy()
+      expect(titulos().slice(0, 3)).toEqual([tasks[1]!.titulo, tasks[0]!.titulo, tasks[2]!.titulo])
+    })
+
+    it('a ordem nova continua depois de concluir uma tarefa', async () => {
+      await renderDemo(rotas, '/tarefas')
+      await fireEvent.press(await screen.findByRole('button', { name: `Mover ${tasks[0]!.titulo}` }))
+      await fireEvent.press(screen.getByRole('menuitem', { name: 'Mover para baixo' }))
+      await fireEvent.press(screen.getByRole('button', { name: `Ações de ${tasks[2]!.titulo}` }))
+      await fireEvent.press(screen.getByRole('menuitem', { name: 'Concluir tarefa' }))
+      expect(titulos().slice(0, 3)).toEqual([tasks[1]!.titulo, tasks[0]!.titulo, tasks[2]!.titulo])
+    })
+  })
 })

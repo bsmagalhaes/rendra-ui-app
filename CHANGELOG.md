@@ -4,6 +4,22 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ## [Não lançado]
 
+## [1.4.0] - 04/10/2026
+
+Versão aditiva sobre a 1.3.0: 75 códigos no catálogo (a `List` ganha o código `LIST-002` quando reordenável). Mudança só aditiva: nenhuma API pública existente foi removida, renomeada ou teve a assinatura alterada; sem `onReorder` a `List` é a mesma de antes.
+
+### Adicionado
+
+- `List.onReorder` e `List.itemLabel`: lista reordenável, com paridade com o web. Cada linha ganha uma alça de arraste (`Reordenar X`) e um botão `Mover X` com o menu "Mover para cima" e "Mover para baixo", fora da área tocável da linha. `onReorder` recebe a lista nova uma vez só, ao soltar (ou a cada movimento do menu, das ações de acessibilidade e das setas). `itemLabel` dá o nome falado de cada linha quando o título não basta. `onReorder` recebe só as linhas passadas em `items`: com busca ou filtro ativo, a tela deve mapear o resultado de volta para a lista completa ou desligar a reordenação (`onReorder={undefined}`, como faz a tela de tarefas da demo), senão as linhas ocultas se perdem.
+- Código `LIST-002` no catálogo para a `List` reordenável; `LIST-001` segue valendo sem `onReorder`.
+- Arraste na alça: o gesto vence a rolagem da página, o item levantado acompanha o dedo, os vizinhos abrem espaço, e a rolagem automática na borda funciona quando a `List` é rolável (`scrollEnabled`).
+- Acessibilidade: ações `moveUp` e `moveDown` na alça (TalkBack e VoiceOver) e anúncio "X, posição N de M" a cada movimento. No web, setas para cima e para baixo com a alça focada movem a linha, o foco volta à alça do item movido e uma região viva (`aria-live="polite"`) repete o anúncio.
+- Em linha reordenável com `leading` ou `trailing`, o título e a descrição ocupam uma linha própria, de largura inteira (o título pode ir a duas linhas), e os controles ficam na linha de baixo, para o texto continuar legível em telas estreitas.
+- Vitrine: a `List` de exemplo é reordenável. Tela de tarefas da demo: reordenar pela alça e pelo menu Mover (só sem busca ativa; nada é gravado).
+- Declaração de `onKeyDown` nos tipos de `View` do app (usada pelas setas no web).
+- Não provado em aparelho: iOS (VoiceOver e disputa com a rolagem do `UIScrollView`), TalkBack e a rolagem automática no aparelho (não há tela de exemplo com `List` rolável; provada só em testes).
+- Simulação dos dois leigos aprovada em 04/10/2026 (Regra um, item 7): começar um app novo e migrar um app existente, nos três perfis de IA (com terminal e agentes, com terminal sem agentes, chat sem terminal), com a `List` reordenável (`onReorder`, `itemLabel`; arraste, menu Mover e, no web, setas do teclado) alcançada a partir do link, sem lacuna bloqueadora.
+
 ### Alterado
 
 - Capturas de `docs/images` agora em WebP otimizado (o menor entre sem perda e com perda, com alfa preservado), referenciadas em `docs/index.html`, na galeria `?imagem=` e no `README.md`; `docs/og-image.png` continua PNG, recomprimido sem perda. `npm run docs:images` grava nesses formatos (novo `devDependency` `sharp`) e `docs:images:check` lê o tamanho de WebP.

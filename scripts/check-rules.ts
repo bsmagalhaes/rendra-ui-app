@@ -114,6 +114,7 @@ export const R3_ALLOWED_FILES = [
   'src/components/ui/modal.tsx', // useAnimatedStyle (entrada própria do cartão: posição e opacidade)
   'src/components/layout/page-header.tsx',
   'src/components/ui/slider.tsx',
+  'src/components/ui/list.tsx', // useAnimatedStyle (deslocamento, escala e opacidade da linha arrastada)
   'src/components/ui/accordion.tsx',
   'src/components/ui/switch.tsx',
   'src/components/ui/toast.tsx',
