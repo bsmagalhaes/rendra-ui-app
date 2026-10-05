@@ -8,7 +8,7 @@ O Rendra App é o design system e boilerplate mobile do Rendra, em React Native 
 
 Este arquivo vale para qualquer IA de código: Codex, Claude Code, Cursor, GitHub Copilot, Gemini, Windsurf, Jules e outras.
 
-O design system completo traz 64 componentes de UI (`src/components/ui`, `src/components/layout`, `src/components/app-shell`, `src/components/splash`), 57 entradas de vitrine (`/componentes`) e telas de exemplo (home, login com verificação em duas etapas, esqueci a senha, nova senha, criar conta, painel, clientes, detalhe, novo cliente, cadastro guiado, tarefas, atendimento, agenda, funil, configurações, 404 e erro 500). Os 44 primeiros existem desde a F1b (o `Spinner` entrou na Sincronização 1) e os cinco da F2 (`RendraCredit`, `ErrorPage`, `AuthLayout`, `AppShell`, `RendraSplash`) chegaram na 1.1.0, e os oito da F3 (`Chart`, `Timeline`, `Calendar`, `Kanban`, `ImageViewer`, o Chat, `RichTextEditor` e `DocumentViewer`) na 1.2.0, e os sete da Sincronização 2 (`Rating`, `Checklist`, `Pagination`, `DataToolbar`, `Table`, `Stepper` e `Wizard`) na 1.3.0, sobre a fundação da F1a: scaffold, tokens, os 3 modelos (Safira/Poppins, Equilíbrio/DM Sans, Aurora/Inter), `BrandProvider`/`useBrand`, `Gradient`, fontes, `check:rules`, e a vitrine completa (`/componentes`, `/tokens` e `/galeria`). A versão corrente está em `CHANGELOG.md`.
+O design system completo traz 65 componentes de UI (`src/components/ui`, `src/components/layout`, `src/components/app-shell`, `src/components/splash`), 58 entradas de vitrine (`/componentes`) e telas de exemplo (home, login com verificação em duas etapas, esqueci a senha, nova senha, criar conta, painel, clientes, detalhe, novo cliente, cadastro guiado, tarefas, atendimento, agenda, funil, configurações, 404 e erro 500). Os 44 primeiros existem desde a F1b (o `Spinner` entrou na Sincronização 1) e os cinco da F2 (`RendraCredit`, `ErrorPage`, `AuthLayout`, `AppShell`, `RendraSplash`) chegaram na 1.1.0, e os oito da F3 (`Chart`, `Timeline`, `Calendar`, `Kanban`, `ImageViewer`, o Chat, `RichTextEditor` e `DocumentViewer`) na 1.2.0, e os sete da Sincronização 2 (`Rating`, `Checklist`, `Pagination`, `DataToolbar`, `Table`, `Stepper` e `Wizard`) na 1.3.0, sobre a fundação da F1a: scaffold, tokens, os 3 modelos (Safira/Poppins, Equilíbrio/DM Sans, Aurora/Inter), `BrandProvider`/`useBrand`, `Gradient`, fontes, `check:rules`, e a vitrine completa (`/componentes`, `/tokens` e `/galeria`). A versão corrente está em `CHANGELOG.md`.
 
 ## Fluxo de início: descubra em qual ramo você está
 
@@ -166,7 +166,7 @@ npm run test:layout    # Playwright, layout e toque
 npm run test:a11y      # Playwright + axe, WCAG 2.1 AA
 npm run test:site      # Playwright, a página de apresentação (raiz do Pages): SEO, iframe, links e axe
 npm run test:demo      # Playwright, a demo em /demo/: prefixo mantido ao navegar e ao voltar
-npm run docs:images    # capturas de celular do README e da página (WebP otimizado), e og-image.png (rode npm run build antes)
+npm run docs:images    # capturas de celular do README e da página (WebP otimizado), e og-image.jpg (rode npm run build antes)
 npm run docs:images:check # confere que toda captura é de celular e a og-image tem 1200x630
 ```
 

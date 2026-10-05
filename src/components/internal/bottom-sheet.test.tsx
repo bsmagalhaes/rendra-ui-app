@@ -2,6 +2,7 @@ import { AccessibilityInfo, Text as RNText } from 'react-native'
 import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils'
 import { render, fireEvent, waitFor } from '@testing-library/react-native'
 import { BottomSheet, bottomSheetTranslateY } from './bottom-sheet'
+import { bordasSemCor } from '../../test-utils/bordas'
 import { Text } from './text'
 import { BrandProvider } from '../../brand/brand-provider'
 import * as ReducedMotionModule from '../../lib/reduced-motion'
@@ -183,5 +184,18 @@ describe('BottomSheet', () => {
     )
     const modal = await findByTestId('folha')
     expect(modal.props.animationType).toBe('none')
+  })
+})
+
+
+describe('BottomSheet: borda com a cor do token', () => {
+  it('a borda superior da folha usa border-border (não preta)', async () => {
+    const { container } = await render(
+      <BottomSheet open onOpenChange={() => {}}>
+        <RNText>Conteúdo</RNText>
+      </BottomSheet>,
+    )
+    expect(bordasSemCor(container)).toEqual([])
+    expect(container.queryAll((no) => String(no.props.className ?? '').split(' ').includes('border-border'))).toHaveLength(1)
   })
 })

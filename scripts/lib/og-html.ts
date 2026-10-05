@@ -27,7 +27,7 @@ function comDestaque(texto: string): string {
 }
 
 /**
- * Página de 1200x630 da `og-image.png`, no tema escuro da família (adendo de identidade): fundo
+ * Página de 1200x630 da `og-image.jpg`, no tema escuro da família (adendo de identidade): fundo
  * #111111, marca em mono, título em #f2f2f2 com a palavra-chave em #e8650a, tagline em #c4c4c4,
  * rodapé em #9a9a9a e dois aparelhos à direita, com a moldura de `docs/phone.css`.
  */

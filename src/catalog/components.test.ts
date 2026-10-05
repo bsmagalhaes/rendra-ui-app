@@ -23,7 +23,7 @@ const entradaFabricada = (over: Partial<ComponentCatalogEntry>): ComponentCatalo
   ...over,
 })
 
-// Lista literal dos 36 arquivos catalogaveis de src/components/ui (sem index.ts, sem teste;
+// Lista literal dos arquivos catalogaveis (sheet.tsx entrou na 1.5.0, a folha inferior so do app) de src/components/ui (sem index.ts, sem teste;
 // eram 33 ate a Tarefa 8.1, que acrescentou spinner.tsx, 34 ate a F2 A.2, que acrescentou rendra-credit.tsx, e 35 ate a F2 C.1, que acrescentou error-page.tsx),
 // igual ao levantamento (Fable) secao 3.3.2 e ao veredito do Opus (B6).
 const ARQUIVOS_REAIS_DE_COMPONENTE = [
@@ -72,6 +72,7 @@ const ARQUIVOS_REAIS_DE_COMPONENTE = [
   'components/ui/rich-text-editor.tsx',
   'components/ui/select.tsx',
   'components/ui/separator.tsx',
+  'components/ui/sheet.tsx',
   'components/ui/skeleton.tsx',
   'components/ui/slider.tsx',
   'components/ui/spinner.tsx',
@@ -82,6 +83,9 @@ const ARQUIVOS_REAIS_DE_COMPONENTE = [
   'components/ui/timeline.tsx',
   'components/ui/toast.tsx',
 ]
+
+// Codigos que existem so no app: o web nao tem folha inferior (la o painel que sobe e o Drawer).
+const CODIGOS_SO_DO_APP = ['FOL-001']
 
 // Tabela literal copiada do Apendice A do veredito do Opus (46 entradas do Bloco 1, sem
 // SPIN-001; SPIN-001 entra na Tarefa 8.1, achado C2; LIST-002 entra com o `onReorder` na 1.4.0), para provar paridade
@@ -272,7 +276,14 @@ describe('catalogo de componentes', () => {
   })
 
   it('paridade com o web: 75 entradas (as 49 da F1b e F2 e da Sincronizacao 1, CHT-001 a CHT-007, TLN-001, CAL-001, KANB-001, KANB-002, IMG-001, CHAT-001, CHAT-002, CHAT-003, RTE-001 e DOC-001 da F3, as da Sincronizacao 2 e LIST-002 da 1.4.0) com code/component/variantProps/isDefault iguais (Apendice A do veredito do Opus)', () => {
-    expect(CATALOG).toHaveLength(75)
+    expect(TABELA_PARIDADE).toHaveLength(75)
+    expect(CATALOG.filter((e) => !CODIGOS_SO_DO_APP.includes(e.code))).toHaveLength(75)
+  })
+
+  it('codigos so do app (sem par no web): FOL-001, a folha inferior da 1.5.0; o catalogo inteiro tem 76 entradas', () => {
+    expect(CODIGOS_SO_DO_APP).toEqual(['FOL-001'])
+    for (const code of CODIGOS_SO_DO_APP) expect(getCatalogEntry(code)).toBeDefined()
+    expect(CATALOG).toHaveLength(76)
   })
 
   it.each(TABELA_PARIDADE)('%s (%s) casa code/component/variantProps/isDefault', (code, component, variantProps, isDefault) => {

@@ -1,4 +1,4 @@
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 import { screen } from 'expo-router/testing-library'
 import { Text } from 'react-native'
 import ShellLayout from '../../../app/(shell)/_layout'
@@ -7,6 +7,7 @@ import { toast } from '../../components/ui'
 import { restaurarClientes } from '../../demo/clients-store'
 import { clients } from '../../mocks/clients'
 import { renderDemo } from '../../test-utils/render-demo'
+import { nodesWithCode } from '../../test-utils/rendra-code'
 
 const rotas = {
   '(shell)/_layout': ShellLayout,
@@ -105,5 +106,19 @@ describe('lista de clientes', () => {
     await fireEvent.press(await screen.findByRole('button', { name: 'Novo cliente' }))
     expect(await screen.findByText('Tela de novo cliente')).toBeTruthy()
     expect(tela.getPathname()).toBe('/clientes/novo')
+  })
+})
+
+
+describe('clientes: conteúdo no cartão', () => {
+  it('a lista e o "Carregar mais" ficam dentro de um cartão; a busca e o total ficam fora', async () => {
+    const tela = await renderDemo(rotas, '/clientes')
+    await screen.findAllByText(clients[0]!.nome)
+    const cartoes = nodesWithCode(tela.container, 'CARD-001')
+    expect(cartoes).toHaveLength(1)
+    expect(within(cartoes[0]!).getAllByText(clients[0]!.nome).length).toBeGreaterThan(0)
+    expect(within(cartoes[0]!).getByRole('button', { name: 'Carregar mais' })).toBeTruthy()
+    expect(within(cartoes[0]!).queryByLabelText('Buscar cliente')).toBeNull()
+    expect(within(cartoes[0]!).queryByText('Mostrando 10 de 48 clientes')).toBeNull()
   })
 })

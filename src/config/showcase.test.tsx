@@ -1,4 +1,4 @@
-import { render, act } from '@testing-library/react-native'
+import { render, act, fireEvent, screen } from '@testing-library/react-native'
 import { BrandProvider } from '../brand/brand-provider'
 import { showcaseGroups } from './showcase'
 
@@ -24,7 +24,7 @@ describe('showcaseGroups', () => {
     ])
   })
 
-  it('grupo feedback tem as 10 entradas na ordem da spec (Spinner entra na Sincronizacao 1, Tarefa 8.1)', () => {
+  it('grupo feedback tem as 11 entradas na ordem da spec (Spinner entra na Sincronizacao 1, Tarefa 8.1; Sheet, a folha inferior, na 1.5.0)', () => {
     const group = showcaseGroups.find((item) => item.slug === 'feedback')
     expect(group?.entries.map((entry) => entry.name)).toEqual([
       'BrandFeedbackIcon',
@@ -37,6 +37,7 @@ describe('showcaseGroups', () => {
       'InfoHint',
       'Modal',
       'Drawer',
+      'Sheet',
     ])
   })
 
@@ -96,10 +97,35 @@ describe('showcaseGroups', () => {
     expect(grupo?.entries.map((e) => e.codes)).toEqual([['CAL-001'], ['KANB-001'], ['KANB-002'], ['IMG-001'], ['CHAT-001', 'CHAT-002', 'CHAT-003']])
   })
 
-  it('a vitrine tem 57 entradas reais, 4/15/10/12/6/5/5 por grupo (os grupos dados e planejamento sao da F3; a Sincronizacao 2 acrescenta 7) (Spinner no feedback, Tarefa 8.1; divergencia da spec registrada)', () => {
+  it('a vitrine tem 58 entradas reais, 4/15/11/12/6/5/5 por grupo (os grupos dados e planejamento sao da F3; a Sincronizacao 2 acrescenta 7) (Spinner no feedback, Tarefa 8.1; divergencia da spec registrada)', () => {
     const total = showcaseGroups.flatMap((g) => g.entries).length
-    expect(total).toBe(57)
-    expect(showcaseGroups.map((g) => g.entries.length)).toEqual([4, 15, 10, 12, 6, 5, 5])
+    expect(total).toBe(58)
+    expect(showcaseGroups.map((g) => g.entries.length)).toEqual([4, 15, 11, 12, 6, 5, 5])
+  })
+
+  it('o exemplo da Sheet abre a folha, marca o filtro, aplica e mostra o resultado na tela', async () => {
+    const entrada = showcaseGroups.flatMap((g) => g.entries).find((e) => e.name === 'Sheet')!
+    await render(<BrandProvider>{entrada.render()}</BrandProvider>)
+    expect(screen.getByText('Sem filtro')).toBeTruthy()
+    await fireEvent.press(screen.getByRole('button', { name: 'Abrir folha' }))
+    await fireEvent.press(await screen.findByRole('checkbox', { name: 'Só clientes ativos' }))
+    await fireEvent.press(screen.getByRole('button', { name: 'Aplicar' }))
+    expect(await screen.findByText('Filtro aplicado: só ativos')).toBeTruthy()
+    expect(screen.queryByRole('checkbox', { name: 'Só clientes ativos' })).toBeNull()
+    // Limpar volta o rascunho; fechar sem aplicar não muda o que foi aplicado
+    await fireEvent.press(screen.getByRole('button', { name: 'Abrir folha' }))
+    await fireEvent.press(await screen.findByRole('button', { name: 'Limpar' }))
+    expect(screen.getByRole('checkbox', { name: 'Só clientes ativos' }).props.accessibilityState.checked).toBe(false)
+  })
+
+  it('o exemplo do Tabs mostra overflow="scroll" com countLabel, e o do Input mostra trailingAction com selo', async () => {
+    const entradas = showcaseGroups.flatMap((g) => g.entries)
+    await render(<BrandProvider>{entradas.find((e) => e.name === 'Tabs')!.render()}</BrandProvider>)
+    expect(screen.getByRole('tab', { name: 'Fila 3 não lidas' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Encerrado' })).toBeTruthy()
+    await render(<BrandProvider>{entradas.find((e) => e.name === 'Input')!.render()}</BrandProvider>)
+    expect(screen.getByRole('button', { name: 'Filtros, 2 ativos' })).toBeTruthy()
+    expect(screen.getAllByText('2').length).toBeGreaterThan(0)
   })
 
   it.each(['acoes', 'layout', 'feedback', 'formulario', 'exibicao', 'dados', 'planejamento'])(

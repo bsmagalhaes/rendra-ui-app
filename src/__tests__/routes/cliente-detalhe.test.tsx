@@ -117,7 +117,8 @@ describe('detalhe do cliente', () => {
     await act(async () => {
       router.replace('/atendimento')
     })
-    await fireEvent.press(await screen.findByRole('tab', { name: 'Atendimento 2' }))
+    // a conversa do Carlos foi aberta e as não lidas dela zeraram: a aba fica sem balão
+    await fireEvent.press(await screen.findByRole('tab', { name: 'Atendimento' }))
     expect(within(await screen.findByTestId('conversation-item-t2')).queryByText('2')).toBeNull()
   })
 

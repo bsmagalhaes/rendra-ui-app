@@ -278,7 +278,7 @@ function ListRow({ item, reorder }: { item: ListItem; reorder?: RowReorder }) {
 
   const textBlock = (
     <View className={cn('min-w-0 flex-col gap-1', stacked ? 'self-stretch' : 'flex-1')}>
-      <Text weight="medium" numberOfLines={stacked ? 2 : 1} className="text-sm text-foreground">
+      <Text weight="medium" numberOfLines={stacked || item.leading || item.trailing ? 2 : 1} className="text-sm text-foreground">
         {item.title}
       </Text>
       {item.description ? (

@@ -56,12 +56,12 @@ export function PickerPanel({
                 <X className="size-icon-md text-muted-foreground" />
               </Pressable>
             </View>
-            {header ? <View className="border-b px-4 pb-3">{header}</View> : null}
+            {header ? <View className="border-b border-border px-4 pb-3">{header}</View> : null}
           </View>
         }
         footer={
           footer ? (
-            <View className="border-t px-4 pb-4 pt-3">
+            <View className="border-t border-border px-4 pb-4 pt-3">
               {footer}
             </View>
           ) : undefined

@@ -132,6 +132,21 @@ describe('List', () => {
     expect(getByTestId('list-chevron-2', { includeHiddenElements: true })).toBeTruthy()
   })
 
+  it('com leading ou trailing (selo, menu) o titulo pode ir a 2 linhas em vez de cortar; sem eles, 1 linha', async () => {
+    const { findByText } = await render(
+      <BrandProvider>
+        <List
+          items={[
+            { id: '1', title: 'Metalurgica Estrela', trailing: <View /> },
+            { id: '2', title: 'Ana Souza' },
+          ]}
+        />
+      </BrandProvider>,
+    )
+    expect((await findByText('Metalurgica Estrela')).props.numberOfLines).toBe(2)
+    expect((await findByText('Ana Souza')).props.numberOfLines).toBe(1)
+  })
+
   it('titulo trunca em 1 linha e descricao em 2', async () => {
     const { findByText } = await render(<BrandProvider><List items={items} /></BrandProvider>)
     expect((await findByText('Ana Souza')).props.numberOfLines).toBe(1)

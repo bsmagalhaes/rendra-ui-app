@@ -143,7 +143,7 @@ export function BottomSheet({
             onPress={() => onOpenChange(false)}
           />
           <Animated.View testID={testID ? `${testID}-sheet` : undefined} style={sheetStyle}>
-            <View className="rounded-t-surface border-t bg-popover shadow-lg shrink">
+            <View className="rounded-t-surface border-t border-border bg-popover shadow-lg shrink">
               <GestureDetector gesture={pan}>
                 <View
                   testID={`${testID ?? 'bottom-sheet'}-drag-handle`}

@@ -15,7 +15,7 @@ import { buildRobotsTxt } from '../../src/lib/robots'
 import { routeSeo, siteSeo } from '../../src/config/seo'
 
 /** Arquivos de `docs/` que vão para a raiz do Pages (a `robots.txt` e o sitemap são gerados). */
-const ARQUIVOS_DA_RAIZ = ['index.html', 'icon.svg', 'og-image.png', 'phone.css'] as const
+const ARQUIVOS_DA_RAIZ = ['index.html', 'icon.svg', 'og-image.jpg', 'phone.css'] as const
 
 export interface StageOptions {
   distDir: string

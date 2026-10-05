@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Text, View } from 'react-native'
 import { render, fireEvent, waitFor } from '@testing-library/react-native'
 import { BrandProvider } from '../../brand/brand-provider'
 import { ThemeColorProbe } from '../../test-utils/theme-color-probe'
@@ -456,5 +457,81 @@ describe('Input: variant secret (item D7 do levantamento da Sincronizacao 1)', (
     expect(onStartEdit).toHaveBeenCalledTimes(1)
     await fireEvent.press(await findByText('Remover'))
     expect(onRemove).toHaveBeenCalledTimes(1)
+  })
+})
+
+
+describe('Input com botão de ação à direita (trailingAction)', () => {
+  function CampoComFiltro({ filtros = 0 }: { filtros?: number }) {
+    const [aberto, setAberto] = useState(false)
+    return (
+      <BrandProvider>
+        <ControlledInput
+          testID="campo"
+          clearable
+          initial="ana"
+          trailingAction={{
+            icon: <View testID="icone-filtro" />,
+            accessibilityLabel: filtros > 0 ? `Filtros, ${filtros} ${filtros === 1 ? 'ativo' : 'ativos'}` : 'Filtros',
+            onPress: () => setAberto(true),
+            badge: filtros,
+          }}
+        />
+        {aberto ? <Text>Filtros abertos</Text> : null}
+      </BrandProvider>
+    )
+  }
+
+  it('o botão fica dentro da moldura do campo, com o nome informado, e tocar nele produz efeito visível', async () => {
+    const { findByRole, findByText, container } = await render(<CampoComFiltro filtros={2} />)
+    const botao = await findByRole('button', { name: 'Filtros, 2 ativos' })
+    // dentro da moldura CAMP-001, não solto ao lado
+    const [moldura] = nodesWithCode(container, 'CAMP-001')
+    expect(moldura.queryAll((no) => no === botao)).toHaveLength(1)
+    await fireEvent.press(botao)
+    expect(await findByText('Filtros abertos')).toBeTruthy()
+  })
+
+  it('o selo mostra o número de filtros e some com 0 ou sem a prop', async () => {
+    const { findByText, rerender, queryByText, findByRole } = await render(<CampoComFiltro filtros={2} />)
+    expect(await findByText('2')).toBeTruthy()
+    await rerender(<CampoComFiltro filtros={0} />)
+    expect(queryByText('2')).toBeNull()
+    expect(queryByText('0')).toBeNull()
+    expect(await findByRole('button', { name: 'Filtros' })).toBeTruthy()
+  })
+
+  it('com um filtro, o nome acessível diz "1 ativo" (singular)', async () => {
+    const { findByRole } = await render(<CampoComFiltro filtros={1} />)
+    expect(await findByRole('button', { name: 'Filtros, 1 ativo' })).toBeTruthy()
+  })
+
+  it('com clearable e valor digitado, "Limpar campo" vem antes da ação e os dois existem', async () => {
+    const { findByRole, findAllByRole } = await render(<CampoComFiltro filtros={1} />)
+    expect(await findByRole('button', { name: 'Limpar campo' })).toBeTruthy()
+    const nomes = (await findAllByRole('button')).map((b) => b.props.accessibilityLabel)
+    expect(nomes.indexOf('Limpar campo')).toBeGreaterThanOrEqual(0)
+    expect(nomes.indexOf('Limpar campo')).toBeLessThan(nomes.indexOf('Filtros, 1 ativo'))
+  })
+
+  it('o botão mantém o alvo de 44 px (size-control-sm) e o selo não o reduz', async () => {
+    const { findByRole } = await render(<CampoComFiltro filtros={3} />)
+    const botao = await findByRole('button', { name: 'Filtros, 3 ativos' })
+    expect(botao.props.className.split(' ')).toEqual(expect.arrayContaining(['size-control-sm', 'shrink-0']))
+  })
+
+  it('desabilitado, o botão de ação não responde ao toque', async () => {
+    const onPress = jest.fn()
+    const { findByRole } = await render(
+      <BrandProvider>
+        <Input
+          disabled
+          trailingAction={{ icon: <View />, accessibilityLabel: 'Filtros', onPress }}
+        />
+      </BrandProvider>,
+    )
+    const botao = await findByRole('button', { name: 'Filtros' })
+    await fireEvent.press(botao)
+    expect(onPress).not.toHaveBeenCalled()
   })
 })

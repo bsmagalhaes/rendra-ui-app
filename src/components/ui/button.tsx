@@ -160,14 +160,19 @@ export const Button = forwardRef<View, ButtonProps>(function Button(
       {...rest}
       dataSet={{ ...rest.dataSet, rendra: code }}
     >
-      <Animated.View style={scaleStyle} className="flex-row items-center gap-2">
-        {content}
-        {!iconOnly && children != null && (
-          <Text weight="medium" className={textClassName}>
-            {children}
-          </Text>
-        )}
-        {!iconOnly && !loading && iconRight}
+      {/* Um `Animated.View` com `className` perde as classes no web (o filho saía em coluna, com o
+          ícone acima do texto): o animado leva só `style` e o layout em linha vive num `View`
+          comum. `min-w-0 shrink` deixa o rótulo longo quebrar dentro do botão em vez de vazar. */}
+      <Animated.View style={scaleStyle}>
+        <View className="min-w-0 shrink flex-row items-center gap-2">
+          {content}
+          {!iconOnly && children != null && (
+            <Text weight="medium" className={textClassName}>
+              {children}
+            </Text>
+          )}
+          {!iconOnly && !loading && iconRight}
+        </View>
       </Animated.View>
     </Pressable>
   )

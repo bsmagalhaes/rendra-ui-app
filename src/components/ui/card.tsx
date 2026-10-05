@@ -48,7 +48,7 @@ export function Card({
     <View
       nativeID={nativeID}
       dataSet={{ rendra: code ?? 'CARD-001' }}
-      className={cn('flex min-w-0 flex-col rounded-surface border bg-card', className)}
+      className={cn('flex min-w-0 flex-col rounded-surface border border-border bg-card', className)}
     >
       {mapped}
     </View>
@@ -106,7 +106,7 @@ export function CardFooter({
   testID?: string
 }) {
   return (
-    <View testID={testID} className={cn('flex-row items-center gap-3 border-t px-4 py-3', className)}>
+    <View testID={testID} className={cn('flex-row items-center gap-3 border-t border-border px-4 py-3', className)}>
       {children}
     </View>
   )

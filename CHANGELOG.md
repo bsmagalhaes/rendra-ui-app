@@ -4,6 +4,32 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ## [Não lançado]
 
+## [1.5.0] - 05/10/2026
+
+Versão aditiva sobre a 1.4.0: 76 códigos no catálogo (`FOL-001`, a folha inferior, só do app) e 65 componentes de UI. Nenhuma API pública existente foi removida, renomeada ou teve a assinatura alterada: as props novas são opcionais e o comportamento padrão do `Tabs` e do `Input` não mudou.
+
+### Adicionado
+
+- `Tabs` com `overflow="scroll"`: as abas ficam como abas e a lista rola na horizontal, sem barra de rolagem, em vez de virar um `Select`. O padrão continua `'select'`. Na variante `line`, a linha de baixo fica no contêiner da rolagem.
+- `TabItem.countLabel`: texto do número para leitor de tela (o nome da aba vira `Fila 1 não lida`). A pílula visível mostra só o número.
+- `Input.trailingAction`: botão de ação dentro da moldura do campo, à direita, com 44 px, e um selo numérico opcional (`badge`, some com 0). O número também deve entrar no `accessibilityLabel`.
+- `Sheet` (`FOL-001`): folha inferior pública, com título, botão Fechar e rodapé de ações; sobe de baixo, fecha tocando fora, arrastando ou pelo botão voltar. Só existe no app (o web usa o `Drawer`); o catálogo passa a ter 75 códigos em paridade com o web e 1 só do app.
+- Tela Atendimento da demonstração: abas roláveis, balão com as mensagens não lidas de cada etapa (some quando é zero) e busca com botão de filtros que abre uma folha inferior com Canal e Período (Tudo, Hoje, 7 dias, 30 dias; Limpar e Aplicar).
+- O gerador de imagens (`npm run docs:images`) compara WebP sem perda, WebP com perda, PNG sem perda (sem paleta) e, quando a captura não tem transparência, JPG qualidade 90, e grava o vencedor e reescreve as referências (cada captura sai em WebP, PNG ou JPG, o que for menor) em `docs/index.html` (galeria, miniaturas e lightbox, por um mapa de formatos) e no `README.md`, e apaga os arquivos que deixam de ser referenciados. Imprime os bytes de cada candidato. Os testes provam que nenhuma referência fica quebrada. A `og-image` compara PNG sem perda e JPG qualidade 90 e grava o menor: passa a ser `og-image.jpg` (as metatags, `docs/` e `public/` acompanham).
+- Simulação dos dois leigos aprovada em 05/10/2026 (Regra um, item 7): começar um app novo e migrar um app existente, nos três perfis de IA (com terminal e agentes, com terminal sem agentes, chat sem terminal), com o `Tabs` rolável (`overflow="scroll"`, `countLabel`), o `Input.trailingAction`, a `Sheet` (`FOL-001`), o `Button` com ícone ao lado do texto, as bordas na cor do token, os cartões nas telas e o título da `List` em 2 linhas alcançados a partir do link, sem lacuna bloqueadora.
+
+### Corrigido
+
+- Para quem já usa o pacote, o efeito visual é este: bordas e divisores passam de pretos para a cor do token nos 13 pontos que não tinham cor (`--rendra-border`) (`ActionBar`, `Card` e `CardFooter`, `ButtonGroup`, `Tabs` na variante `line`, `Accordion`, `RadioGroup` desmarcado, "Selecionar todos" do `CheckboxGroup`, cabeçalho e rodapé do `Drawer` e do `Modal`, painel dos seletores e borda de cima da folha inferior), e o ícone do `Button` sai de cima do texto e fica ao lado, no web. Rótulo longo ao lado do ícone quebra linha dentro do botão em vez de vazar.
+
+### Alterado
+
+- Telas de exemplo (Tarefas, Clientes, Atendimento, Tokens e a vitrine `/componentes/[slug]`): o conteúdo vai para cartões brancos com borda cinza clara, sobre o fundo cinza do modo claro (o token de fundo não mudou). Exemplos que já são uma superfície (`Card`, `StatCard`, `OtpInput`, formulário em seções, `DataToolbar`, `Table`, `Calendar` e `Kanban`) não ganham outro cartão. A vitrine passa a ter 58 entradas.
+- A `List` com `leading` ou `trailing` passa a mostrar o título em até 2 linhas em vez de cortar com reticências, em todo chamador (Clientes, Tarefas e qualquer lista sua com selo, menu ou ícone). Sem `leading` nem `trailing`, continua em 1 linha.
+- Na demonstração, o filtro de período do Atendimento se ancora na conversa mais recente dos dados de exemplo (05/10/2026), e não no relógio do aparelho, para "Hoje" e "7 dias" mostrarem resultado; só os dados de demonstração mudam.
+- Divergências com o web, para outra frente: `overflow` e `countLabel` no `Tabs`, `trailingAction` no `Input` e `FOL-001` existem só no app.
+- Não provado: iOS (VoiceOver, arraste da folha) e TalkBack. No Android (emulador, Expo Go) foram conferidos o `Button` com ícone, as bordas, a rolagem das abas, a folha de filtros (abrir, marcar, Aplicar e arrastar para fechar).
+
 ## [1.4.0] - 04/10/2026
 
 Versão aditiva sobre a 1.3.0: 75 códigos no catálogo (a `List` ganha o código `LIST-002` quando reordenável). Mudança só aditiva: nenhuma API pública existente foi removida, renomeada ou teve a assinatura alterada; sem `onReorder` a `List` é a mesma de antes.

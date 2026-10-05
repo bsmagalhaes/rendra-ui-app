@@ -90,7 +90,7 @@ export function ActionBar({ primary, cancel, secondary, sticky = true, className
 
   return (
     <View
-      className={cn('border-t bg-card px-4 pt-4', className)}
+      className={cn('border-t border-border bg-card px-4 pt-4', className)}
       style={{ paddingBottom: shell?.layout.bottomNav ? 16 : Math.max(16, insets.bottom) }}
       testID={testID}
       dataSet={{ rendra: 'ACB-001' }}

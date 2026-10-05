@@ -8,7 +8,7 @@
  * usa), com `SITE_URL`/`BASE_URL` do ambiente continuando a vencer quando informado, para
  * funcionar sem ajuste manual tanto neste repositório quanto em qualquer clone.
  */
-export function resolveBaseUrl(experimentsBaseUrl: string | undefined, envBaseUrl?: string): string {
+export function resolveBaseUrl(experimentsBaseUrl: string | undefined, envBaseUrl?: string, porta = '4173'): string {
   if (envBaseUrl) return envBaseUrl
-  return `http://localhost:4173${experimentsBaseUrl ?? ''}`
+  return `http://localhost:${porta}${experimentsBaseUrl ?? ''}`
 }

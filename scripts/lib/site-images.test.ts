@@ -11,26 +11,25 @@ const html = readFileSync(join(process.cwd(), 'docs', 'index.html'), 'utf8')
 
 describe('imagens da página', () => {
   it.each(CAPTURAS.map((c) => c.nome))('%s existe e a página a referencia', (nome) => {
-    expect(existsSync(join(process.cwd(), 'docs', 'images', `${nome}.webp`))).toBe(true)
+    const existe = ['webp', 'png'].some((ext) => existsSync(join(process.cwd(), 'docs', 'images', `${nome}.${ext}`)))
+    expect(existe).toBe(true)
     expect(html).toContain(nome)
   })
 
   it('toda imagem que a página cita em images/ existe no disco', () => {
-    const citadas = [...html.matchAll(/images\/([a-z0-9-]+)\.webp/g)].map((m) => m[1] as string)
+    const citadas = [...html.matchAll(/images\/([a-z0-9-]+\.(?:webp|png|jpg))/g)].map((m) => m[1] as string)
     expect(citadas.length).toBeGreaterThan(0)
-    for (const nome of citadas) expect(existsSync(join(process.cwd(), 'docs', 'images', `${nome}.webp`))).toBe(true)
+    for (const arquivo of citadas) expect(existsSync(join(process.cwd(), 'docs', 'images', arquivo))).toBe(true)
   })
 
-  it('galeria, miniaturas e lightbox montam o endereço em WebP, nunca em PNG (regra 9)', () => {
-    expect(html).toContain("'.webp")
-    // Nenhum `.png` na página além da og-image (meta tags e JSON-LD): nem estático, nem montado em JS.
-    const todos = html.match(/\.png/g) ?? []
-    const daOg = html.match(/og-image\.png/g) ?? []
-    expect(daOg.length).toBeGreaterThan(0)
-    expect(todos.length).toBe(daOg.length)
+  it('galeria, miniaturas e lightbox montam o endereço pelo mapa de formatos (cada imagem no formato mais leve, regra 9)', () => {
+    expect(html).toContain("'.' + FORMATOS[id]")
+    expect(html).not.toMatch(/\+\s*'\.(?:webp|png|jpg)['"]/)
+    expect(html).not.toMatch(/id \+ '\.webp/)
+    expect(html.match(/og-image\.jpg/g)?.length ?? 0).toBeGreaterThan(0)
   })
 
   it('a og-image da página existe', () => {
-    expect(existsSync(join(process.cwd(), 'docs', 'og-image.png'))).toBe(true)
+    expect(existsSync(join(process.cwd(), 'docs', 'og-image.jpg'))).toBe(true)
   })
 })

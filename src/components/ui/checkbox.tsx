@@ -149,7 +149,7 @@ export function CheckboxGroup({
           checked={allSelected ? true : someSelected ? 'indeterminate' : false}
           onCheckedChange={toggleAll}
           invalid={invalid}
-          className="border-b"
+          className="border-b border-border"
         />
       ) : null}
       <View className={cn('flex-col', orientation === 'horizontal' && 'flex-row flex-wrap gap-x-6')}>

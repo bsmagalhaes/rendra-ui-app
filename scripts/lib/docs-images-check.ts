@@ -5,7 +5,7 @@ export interface PngSize {
 
 export interface ImagemNomeada {
   nome: string
-  /** Bytes do arquivo: PNG (`og-image.png`) ou WebP (capturas de `docs/images`). */
+  /** Bytes do arquivo: PNG ou JPG (`og-image`) ou WebP, PNG ou JPG (capturas de `docs/images`). */
   bytes: Uint8Array
 }
 
@@ -44,20 +44,37 @@ export function readWebpSize(bytes: Uint8Array): PngSize {
   throw new Error(`WebP com bloco desconhecido: ${formato}`)
 }
 
-/** Tamanho de um PNG ou de um WebP, pela assinatura do arquivo. */
+/** Lê largura e altura de um JPEG pelo primeiro segmento SOF (SOF0 a SOF15, menos DHT, JPG e DAC); recusa arquivo que não é JPEG. */
+export function readJpegSize(bytes: Uint8Array): PngSize {
+  if (bytes.length < 4 || bytes[0] !== 0xff || bytes[1] !== 0xd8) throw new Error('arquivo não é um JPEG válido')
+  let i = 2
+  while (i + 9 < bytes.length) {
+    if (bytes[i] !== 0xff) throw new Error('JPEG com segmento malformado')
+    const marcador = bytes[i + 1]!
+    if (marcador >= 0xc0 && marcador <= 0xcf && marcador !== 0xc4 && marcador !== 0xc8 && marcador !== 0xcc) {
+      return { height: (bytes[i + 5]! << 8) | bytes[i + 6]!, width: (bytes[i + 7]! << 8) | bytes[i + 8]! }
+    }
+    i += 2 + ((bytes[i + 2]! << 8) | bytes[i + 3]!)
+  }
+  throw new Error('JPEG sem segmento SOF')
+}
+
+/** Tamanho de um PNG, WebP ou JPEG, pela assinatura do arquivo. */
 export function readImageSize(bytes: Uint8Array): PngSize {
-  return texto(bytes, 0, 4) === 'RIFF' ? readWebpSize(bytes) : readPngSize(bytes)
+  if (texto(bytes, 0, 4) === 'RIFF') return readWebpSize(bytes)
+  if (bytes[0] === 0xff && bytes[1] === 0xd8) return readJpegSize(bytes)
+  return readPngSize(bytes)
 }
 
 /**
- * Nomes fora do padrão de um produto mobile: qualquer imagem que não seja a `og-image.png` e não
- * seja em pé (altura maior que a largura), e a `og-image.png` diferente de 1200x630.
+ * Nomes fora do padrão de um produto mobile: qualquer imagem que não seja a `og-image` e não
+ * seja em pé (altura maior que a largura), e a `og-image` (PNG ou JPG) diferente de 1200x630.
  */
 export function imagensForaDoPadrao(arquivos: ImagemNomeada[]): string[] {
   return arquivos
     .filter(({ nome, bytes }) => {
       const { width, height } = readImageSize(bytes)
-      return nome === 'og-image.png' ? width !== 1200 || height !== 630 : height <= width
+      return /^og-image.(png|jpg)$/.test(nome) ? width !== 1200 || height !== 630 : height <= width
     })
     .map(({ nome }) => nome)
 }

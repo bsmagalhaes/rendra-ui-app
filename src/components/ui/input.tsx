@@ -34,12 +34,26 @@ export interface InputUnitOption {
   label: string
 }
 
+/**
+ * Botão de ação dentro da moldura do campo, à direita (44 px, como "Limpar campo" e "Mostrar senha").
+ * O ícone vem de quem chama (use `size-icon-sm`). `badge` é um número no canto do botão (ex.: filtros
+ * ativos) e some com 0 ou sem a prop; o número também precisa entrar no `accessibilityLabel`.
+ */
+export interface InputTrailingAction {
+  icon: ReactNode
+  accessibilityLabel: string
+  onPress: () => void
+  badge?: number
+}
+
 export interface InputProps {
   size?: ControlSize
   mask?: MaskName
   icon?: ReactNode
   suffix?: ReactNode
   clearable?: boolean
+  /** Botão de ação à direita, depois de "Limpar campo" (ex.: abrir filtros numa busca). */
+  trailingAction?: InputTrailingAction
   invalid?: boolean
   value?: string
   defaultValue?: string
@@ -90,6 +104,7 @@ export function Input({
   icon,
   suffix,
   clearable = false,
+  trailingAction,
   invalid = false,
   value: controlledValue,
   defaultValue = '',
@@ -336,6 +351,24 @@ export function Input({
           className={controlAdornmentButton}
         >
           <X className="size-icon-sm" />
+        </Pressable>
+      ) : null}
+      {trailingAction ? (
+        <Pressable
+          accessibilityRole={a11yPresets.button.accessibilityRole}
+          accessibilityLabel={trailingAction.accessibilityLabel}
+          disabled={disabled}
+          onPress={trailingAction.onPress}
+          className={cn(controlAdornmentButton, 'relative')}
+        >
+          {trailingAction.icon}
+          {trailingAction.badge && trailingAction.badge > 0 ? (
+            <View className="absolute right-0 top-0 h-icon-sm min-w-icon-sm items-center justify-center rounded-full bg-primary px-1">
+              <Text weight="medium" className="text-xs text-primary-foreground">
+                {trailingAction.badge}
+              </Text>
+            </View>
+          ) : null}
         </Pressable>
       ) : null}
       {secureProp || isSecret ? (

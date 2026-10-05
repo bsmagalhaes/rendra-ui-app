@@ -12,6 +12,35 @@ test.describe('página de apresentação', () => {
     await page.goto('./')
   })
 
+  test('nenhuma imagem de images/ dá 404 e todas carregam (miniaturas, galeria e lightbox, em WebP e PNG)', async ({ page }) => {
+    const respostas: { url: string; status: number }[] = []
+    page.on('response', (r) => {
+      if (r.url().includes('/images/')) respostas.push({ url: r.url(), status: r.status() })
+    })
+    await page.goto('./')
+    // as miniaturas são lazy: força o carregamento de todas antes de contar
+    await page.evaluate(() => document.querySelectorAll('img[loading="lazy"]').forEach((img) => img.setAttribute('loading', 'eager')))
+    await page.waitForLoadState('networkidle')
+    const quebradas = await page.evaluate(() =>
+      Array.from(document.querySelectorAll('img'))
+        .filter((img) => img.getAttribute('src')?.startsWith('images/') && (!img.complete || img.naturalWidth === 0))
+        .map((img) => img.getAttribute('src')),
+    )
+    expect(quebradas).toEqual([])
+    expect(respostas.length).toBeGreaterThan(20)
+    expect(respostas.filter((r) => r.status >= 400)).toEqual([])
+    // o lightbox monta o endereço pelo mesmo mapa: abre cada miniatura e confere que a imagem grande carrega
+    const botoes = page.locator('#gallery [data-open]')
+    const total = await botoes.count()
+    expect(total).toBeGreaterThan(20)
+    for (const i of [0, Math.floor(total / 2), total - 1]) {
+      await botoes.nth(i).click()
+      await expect.poll(() => page.evaluate(() => { const img = document.querySelector('#lightbox img') as HTMLImageElement; return img.complete && img.naturalWidth > 0 })).toBe(true)
+      await page.keyboard.press('Escape')
+    }
+    expect(respostas.filter((r) => r.status >= 400)).toEqual([])
+  })
+
   test('não tem rolagem horizontal', async ({ page }) => {
     const largo = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)
     expect(largo).toBe(false)
@@ -26,7 +55,7 @@ test.describe('página de apresentação', () => {
     )
     const robots = await page.locator('meta[name="robots"]').evaluateAll((ms) => ms.map((m) => m.getAttribute('content')))
     expect(robots).toEqual(expect.arrayContaining(['index, follow', 'noai, noimageai']))
-    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /og-image\.png$/)
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /og-image\.jpg$/)
     const ld = await page.locator('script[type="application/ld+json"]').allTextContents()
     const tipos = ld.flatMap((t) => {
       const j = JSON.parse(t) as { '@type': string } | Array<{ '@type': string }>

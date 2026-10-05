@@ -1,5 +1,10 @@
 import { defineConfig, devices } from '@playwright/test'
 
+// RENDRA_PORTA muda a porta do servidor das páginas quando a 4173 está ocupada por outro processo.
+const PORTA = process.env.RENDRA_PORTA ?? '4173'
+// As URLs ficam com o literal `http://localhost:4173/...` e trocam só a porta com `.replace(':4173', ...)`: o
+// `clean-clone` (scripts/clean-clone.ts, `cleanPlaywrightConfig`) procura esse literal para trocar o caminho
+// do produto (`/rendra-ui-app/` por `/<nome>/`) no clone; uma URL montada só com a variável não casaria.
 const WIDTHS = [360, 390]
 const MODEL_CODES = ['T1-C1', 'T2-C2', 'T3-C3', 'T1-C4']
 
@@ -9,8 +14,8 @@ export default defineConfig({
   // `workers` fica no padrão do Playwright; se o `verify` do CI passar de 25 min, decidir aí.
   fullyParallel: true,
   webServer: {
-    command: 'npm run pages:stage && npx serve .pages -l 4173',
-    port: 4173,
+    command: `npm run pages:stage && npx serve .pages -l ${PORTA}`,
+    port: Number(PORTA),
     reuseExistingServer: !process.env.CI,
   },
   // Barra final obrigatória: com `baseURL` sem barra final, `page.goto('/rota')` (com barra
@@ -19,7 +24,7 @@ export default defineConfig({
   // na execução da Tarefa F2).
   // Os testes (F2/F3) navegam com caminho relativo sem barra inicial (`page.goto('tokens?...')`),
   // que soma corretamente ao baseURL só quando ele termina em barra.
-  use: { baseURL: 'http://localhost:4173/rendra-ui-app/demo/' },
+  use: { baseURL: 'http://localhost:4173/rendra-ui-app/demo/'.replace(':4173', `:${PORTA}`) },
   projects: [
     ...WIDTHS.flatMap((width) =>
       MODEL_CODES.map((codigo) => ({
@@ -41,7 +46,7 @@ export default defineConfig({
     {
       name: 'site-desktop',
       testMatch: /site\.spec\.ts/,
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 }, baseURL: 'http://localhost:4173/rendra-ui-app/' },
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 }, baseURL: 'http://localhost:4173/rendra-ui-app/'.replace(':4173', `:${PORTA}`) },
     },
     {
       name: 'site-mobile',
@@ -51,7 +56,7 @@ export default defineConfig({
         viewport: { width: 390, height: 844 },
         isMobile: true,
         hasTouch: true,
-        baseURL: 'http://localhost:4173/rendra-ui-app/',
+        baseURL: 'http://localhost:4173/rendra-ui-app/'.replace(':4173', `:${PORTA}`),
       },
     },
     // site:fim

@@ -3,6 +3,7 @@ import { render, fireEvent } from '@testing-library/react-native'
 import { BrandProvider } from '../../brand/brand-provider'
 import { Checkbox, CheckboxGroup, type CheckboxGroupOption } from './checkbox'
 import { nodesWithCode } from '../../test-utils/rendra-code'
+import { bordasSemCor, classesDo } from '../../test-utils/bordas'
 
 function ControlledCheckbox() {
   const [checked, setChecked] = useState(false)
@@ -162,5 +163,20 @@ describe('Checkbox/CheckboxGroup: data-rendra (item D12 do levantamento da Sincr
       </BrandProvider>,
     )
     expect(nodesWithCode(container, 'CHK-002')).toHaveLength(1)
+  })
+})
+
+
+describe('CheckboxGroup: borda com a cor do token', () => {
+  it('a linha de "Selecionar todos" usa border-border (não preta)', async () => {
+    const { container } = await render(
+      <BrandProvider>
+        <CheckboxGroup options={[{ value: 'a', label: 'A' }]} value={[]} onChange={() => {}} selectAll />
+      </BrandProvider>,
+    )
+    expect(bordasSemCor(container)).toEqual([])
+    const [linha] = container.queryAll((no) => classesDo(no).includes('border-b'))
+    expect(linha).toBeDefined()
+    expect(classesDo(linha)).toContain('border-border')
   })
 })

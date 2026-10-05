@@ -13,12 +13,13 @@ const { copyFileSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSyn
     (path: string): Uint8Array
   }
   rmSync: (path: string, options: { force: boolean }) => void
-  writeFileSync: (path: string, dados: Uint8Array) => void
+  writeFileSync: (path: string, dados: Uint8Array | string) => void
 }
 const { join } = require('path') as { join: (...parts: string[]) => string }
 
 import { imagensForaDoPadrao } from './lib/docs-images-check'
-import { otimizarParaWebp, otimizarPng } from './lib/image-optimize'
+import { descreverCandidatos, exigirOgEmJpg, otimizarImagem, otimizarOg } from './lib/image-optimize'
+import { reescreverReferencias } from './lib/imagens-referencias'
 import { buildOgHtml } from './lib/og-html'
 import { buildPhoneFrameHtml } from './lib/phone-frame'
 import { ALTURA_STATUS, CAPTURAS, SCALE_CELULAR, VIEWPORT_CELULAR } from './lib/readme-images-list'
@@ -40,7 +41,7 @@ const NOMES_DA_OG_IMAGE = ['safira-home-mobile', 'safira-componentes-mobile']
 const appJson = JSON.parse(readFileSync(join(process.cwd(), 'app.json'), 'utf8')) as {
   expo?: { experiments?: { baseUrl?: string } }
 }
-const BASE_URL = resolveBaseUrl(appJson.expo?.experiments?.baseUrl, process.env.BASE_URL)
+const BASE_URL = resolveBaseUrl(appJson.expo?.experiments?.baseUrl, process.env.BASE_URL, process.env.RENDRA_PORTA)
 
 /**
  * Espera `url` responder, tentando de novo a cada segundo (até `tentativas` vezes). Mecanismo
@@ -66,19 +67,12 @@ async function main(): Promise<void> {
   mkdirSync(destino, { recursive: true })
   mkdirSync(destinoPublic, { recursive: true })
 
-  // Só o que está em CAPTURAS fica em docs/images: as imagens antigas (por exemplo as de 1920x1080)
-  // somem antes de gerar.
-  const nomesAtuais = new Set(CAPTURAS.map((c) => `${c.nome}.webp`))
-  for (const arquivo of readdirSync(destino)) {
-    if (!nomesAtuais.has(arquivo)) rmSync(join(destino, arquivo), { force: true })
-  }
-
   // Spawna o entrypoint do `serve` direto com `process.execPath` (node), sem `shell: true`: no
   // Windows, `spawn('npx', [...], { shell: true })` cria um `cmd.exe` intermediário, e matar esse
   // processo não encerra o `serve` que ele gerou por baixo, deixando a porta 4173 ocupada depois
   // do script terminar (achado de execução, Tarefa 15).
   const resolveModule = (require as unknown as { resolve: (id: string) => string }).resolve
-  const servidor = spawn(process.execPath, [resolveModule('serve/build/main.js'), '.pages', '-l', '4173'], {
+  const servidor = spawn(process.execPath, [resolveModule('serve/build/main.js'), '.pages', '-l', process.env.RENDRA_PORTA ?? '4173'], {
     stdio: 'ignore',
   })
   try {
@@ -89,6 +83,7 @@ async function main(): Promise<void> {
     const contextoMoldura = await browser.newContext({ viewport: { width: 480, height: 900 }, deviceScaleFactor: SCALE_CELULAR })
     const paginaMoldura = await contextoMoldura.newPage()
     const crusParaOg = new Map<string, Uint8Array>()
+    const comMolduraPorNome = new Map<string, Uint8Array>()
     for (const captura of CAPTURAS) {
       const contexto = await browser.newContext({
         viewport: { ...VIEWPORT_CELULAR, height: VIEWPORT_CELULAR.height - ALTURA_STATUS },
@@ -123,11 +118,33 @@ async function main(): Promise<void> {
 
       await paginaMoldura.setContent(buildPhoneFrameHtml(tela, corStatus))
       await paginaMoldura.locator('.phone img').evaluate((img) => (img as HTMLImageElement).decode())
-      // Padrão 6.2 e regra 9 do guarda-chuva: imagem de página e README em WebP otimizado (o menor entre sem perda e com perda).
-      const comMoldura = await paginaMoldura.locator('.phone').screenshot({ omitBackground: true })
-      writeFileSync(join(destino, `${captura.nome}.webp`), await otimizarParaWebp(comMoldura))
+      comMolduraPorNome.set(captura.nome, await paginaMoldura.locator('.phone').screenshot({ omitBackground: true }))
     }
     await contextoMoldura.close()
+
+    // Regra 9 do guarda-chuva: cada imagem sai no formato mais leve (WebP sem perda, WebP com perda ou PNG),
+    // nunca num arquivo maior que o menor candidato. Os formatos podem ser mistos: a extensão de cada imagem
+    // vai para a página, o README e a galeria, e os arquivos que deixam de ser referenciados são apagados.
+    const otimizadas = new Map<string, { bytes: Uint8Array; ext: string }>()
+    for (const [nome, bytes] of comMolduraPorNome) {
+      const { vencedor, candidatos } = await otimizarImagem(bytes)
+      console.log(`${descreverCandidatos(nome, candidatos)} -> grava ${vencedor.rotulo} (${vencedor.bytes.length} B)`)
+      otimizadas.set(nome, { bytes: vencedor.bytes, ext: vencedor.formato })
+    }
+    // Só o que está em CAPTURAS fica em docs/images: as imagens antigas (por exemplo as de 1920x1080) e as de
+    // outro formato que o de agora somem.
+    const esperados = new Set([...otimizadas].map(([nome, { ext }]) => `${nome}.${ext}`))
+    for (const arquivo of readdirSync(destino)) {
+      if (!esperados.has(arquivo)) rmSync(join(destino, arquivo), { force: true })
+    }
+    for (const [nome, { bytes, ext }] of otimizadas) writeFileSync(join(destino, `${nome}.${ext}`), bytes)
+    const formatos = Object.fromEntries([...otimizadas].map(([nome, { ext }]) => [nome, ext]))
+    for (const arquivo of ['docs/index.html', 'README.md']) {
+      const caminho = join(process.cwd(), ...arquivo.split('/'))
+      const antes = readFileSync(caminho, 'utf8')
+      const depois = reescreverReferencias(antes, formatos)
+      if (depois !== antes) writeFileSync(caminho, depois)
+    }
 
     // Imagem de compartilhamento (padrão 6.2), 1200x630, composta por HTML com dois aparelhos e
     // renderizada pelo mesmo mecanismo das capturas, nunca montada à mão. Gravada em docs/ (página)
@@ -142,21 +159,28 @@ async function main(): Promise<void> {
         selo: siteSeo.repositoryUrl === REPOSITORIO_RENDRA ? SELO_RENDRA : undefined,
       }),
     )
-    const ogDocs = join(process.cwd(), 'docs', 'og-image.png')
-    // A og-image continua PNG (rastreadores sociais), só recomprimida sem perda.
-    writeFileSync(ogDocs, await otimizarPng(await paginaOg.screenshot()))
+    // Regra 9: a og-image fica em PNG ou JPG (os rastreadores sociais não leem WebP), o menor entre PNG sem
+    // perda e JPG q90. As metatags e as listas de arquivos citam `og-image.jpg`; se um dia o PNG vencer, o script
+    // para aqui, antes de gravar, com os bytes de cada candidato.
+    const og = await otimizarOg(await paginaOg.screenshot())
+    console.log(`${descreverCandidatos('og-image', og.candidatos)} -> grava ${og.vencedor.rotulo} (${og.vencedor.bytes.length} B)`)
+    exigirOgEmJpg(og)
+    const ogDocs = join(process.cwd(), 'docs', 'og-image.jpg')
+    rmSync(join(process.cwd(), 'docs', 'og-image.png'), { force: true })
+    rmSync(join(destinoPublic, 'og-image.png'), { force: true })
+    writeFileSync(ogDocs, og.vencedor.bytes)
     await contextoOg.close()
-    copyFileSync(ogDocs, join(destinoPublic, 'og-image.png'))
+    copyFileSync(ogDocs, join(destinoPublic, 'og-image.jpg'))
 
     await browser.close()
 
     // Falha se sobrar imagem larga (a mesma checagem de `npm run docs:images:check`).
     const gravadas = readdirSync(destino)
-      .filter((arquivo) => arquivo.endsWith('.webp'))
+      .filter((arquivo) => (arquivo.endsWith('.webp') || arquivo.endsWith('.png') || arquivo.endsWith('.jpg')))
       .map((arquivo) => ({ nome: arquivo, bytes: readFileSync(join(destino, arquivo)) }))
     const fora = imagensForaDoPadrao(gravadas)
     if (fora.length > 0) throw new Error(`readme-images: imagem larga fora do padrão de celular: ${fora.join(', ')}`)
-    console.log(`readme-images: ${CAPTURAS.length} capturas gravadas em ${destino}, og-image.png em ${destinoPublic}`)
+    console.log(`readme-images: ${CAPTURAS.length} capturas gravadas em ${destino}, og-image.jpg em ${destinoPublic}`)
   } finally {
     servidor.kill()
   }

@@ -8,13 +8,15 @@
 //
 // Mesmo desvio H3 já registrado em scripts/verify-build.test.ts e scripts/lib/agent-files.test.ts:
 // tsconfig.json restringe `types` a `["jest"]`, sem @types/node; `require` com cast local.
-const { mkdtempSync, mkdirSync, copyFileSync, readFileSync, existsSync, rmSync } = require('fs') as {
+const { mkdtempSync, mkdirSync, copyFileSync, readFileSync, existsSync, rmSync, readdirSync, statSync } = require('fs') as {
   mkdtempSync: (prefix: string) => string
   mkdirSync: (path: string, options: { recursive: boolean }) => void
   copyFileSync: (src: string, dest: string) => void
   readFileSync: (path: string, encoding: 'utf8') => string
   existsSync: (path: string) => boolean
   rmSync: (path: string, options: { recursive: boolean; force: boolean }) => void
+  readdirSync: (path: string) => string[]
+  statSync: (path: string) => { isDirectory: () => boolean }
 }
 const { tmpdir } = require('os') as { tmpdir: () => string }
 const { join, dirname } = require('path') as { join: (...parts: string[]) => string; dirname: (p: string) => string }
@@ -47,6 +49,22 @@ describe('orchestrate (scripts/clean-clone.ts), sobre uma cópia real dos arquiv
     for (const relativo of ARQUIVOS_SO_DO_PACOTE) {
       expect(existsSync(join(dir, relativo))).toBe(false)
     }
+    // B1 da simulação dos leigos: teste que lê `docs/index.html` some junto com a página; nenhum teste que
+    // sobra no clone pode ler esse arquivo, senão o `npm test` do clone nasce vermelho.
+    for (const relativo of ['scripts/lib/site-hero-cores.test.ts', 'scripts/lib/imagens-referencias.test.ts', 'scripts/lib/f2-docs.test.ts']) {
+      expect(existsSync(join(dir, relativo))).toBe(false)
+    }
+    const restantes: string[] = []
+    const varrer = (pasta: string): void => {
+      for (const nome of readdirSync(pasta)) {
+        const caminho = join(pasta, nome)
+        if (nome === 'node_modules' || nome === '.git') continue
+        if (statSync(caminho).isDirectory()) varrer(caminho)
+        else if (/\.test\.[jt]sx?$/.test(nome) && /docs['"`,\s/\\]+index\.html/.test(readFileSync(caminho, 'utf8'))) restantes.push(caminho.slice(dir.length + 1))
+      }
+    }
+    for (const pasta of ['scripts', 'src', 'e2e']) if (existsSync(join(dir, pasta))) varrer(join(dir, pasta))
+    expect(restantes).toEqual([])
     // Nomes fixos, não a variável importada: uma futura edição que tire um nome da lista por
     // engano (como aconteceu com `CONTRIBUTING.md`/`verify-pack.jest.config.js`, achado M2) não
     // engana o teste acima, que só prova o que já está na lista.
@@ -102,7 +120,7 @@ describe('orchestrate (scripts/clean-clone.ts), sobre uma cópia real dos arquiv
     for (const relativo of [
       'docs/index.html',
       'docs/icon.svg',
-      'docs/og-image.png',
+      'docs/og-image.jpg',
       'e2e/site.spec.ts',
       'e2e/demo-subcaminho.spec.ts',
       'scripts/pages-stage.ts',

@@ -81,7 +81,7 @@ export function RadioGroup({
               disabled={isDisabled}
               onPress={() => select(option.value, option.disabled)}
               className={cn(
-                'flex-row items-start gap-3 rounded-control border bg-card p-4',
+                'flex-row items-start gap-3 rounded-control border border-border bg-card p-4',
                 checked && 'border-primary bg-primary-soft',
                 isDisabled && 'opacity-50',
               )}

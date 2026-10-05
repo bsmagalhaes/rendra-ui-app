@@ -132,7 +132,7 @@ test('configurações: encerrar sessões só depois de confirmar', async ({ page
 // P4: cada fluxo recomeça do zero (o estado da demonstração só vive na página), então são independentes.
 test('atendimento: abrir a conversa do Carlos, enviar uma mensagem e ver a bolha', async ({ page }) => {
   await abrir(page, 'atendimento')
-  await abrirAba(page, 'Etapa do atendimento', 'Atendimento 2', 'Atendimento (2)')
+  await abrirAba(page, 'Etapa do atendimento', 'Atendimento 2 não lidas', 'Atendimento (2)')
   await page.getByRole('button', { name: /Carlos Dias/ }).click()
   await expect(page).toHaveURL(/\/atendimento\/t2/)
   await page.getByLabel('Mensagem', { exact: true }).fill('Posso ajudar em algo mais?')

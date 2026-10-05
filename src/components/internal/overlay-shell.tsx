@@ -36,7 +36,7 @@ export function OverlayShell({
   return (
     <View testID={testID} className={fill ? 'flex-1' : 'shrink'}>
       {!hideHeader && (
-        <View className="flex-row items-start gap-3 border-b px-4 py-4" style={{ paddingTop: Math.max(16, insets.top) }}>
+        <View className="flex-row items-start gap-3 border-b border-border px-4 py-4" style={{ paddingTop: Math.max(16, insets.top) }}>
           {icon && <View className="size-control-md items-center justify-center rounded-control bg-primary-soft">{icon}</View>}
           <View className="flex-1 flex-col gap-1 pt-1">
             <Text weight="semibold" accessibilityRole={a11yPresets.header.accessibilityRole} className="text-lg text-foreground">
@@ -63,7 +63,7 @@ export function OverlayShell({
         {children}
       </ScrollView>
       {footer && (
-        <View className="border-t bg-card px-4 pt-4" style={{ paddingBottom: Math.max(16, insets.bottom) }}>
+        <View className="border-t border-border bg-card px-4 pt-4" style={{ paddingBottom: Math.max(16, insets.bottom) }}>
           {footer}
         </View>
       )}

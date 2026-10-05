@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { Image, KeyboardAvoidingView, Platform, View } from 'react-native'
-import { Archive, Handshake, MoreHorizontal, UserPlus, Wallet, XCircle } from 'lucide-react-native'
+import { Archive, Handshake, MoreHorizontal, SlidersHorizontal, UserPlus, Wallet, XCircle } from 'lucide-react-native'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -75,6 +75,7 @@ import {
   Stepper,
   Wizard,
   type WizardStep,
+  Sheet,
 } from '../components/ui'
 import { Gradient } from '../components/gradient/gradient'
 import { Container, Grid, Inline, PageHeader, Section, Stack } from '../components/layout'
@@ -258,6 +259,8 @@ function InputExample() {
   const [cpf, setCpf] = useState('')
   const [valor, setValor] = useState('')
   const [telefone, setTelefone] = useState('')
+  const [busca, setBusca] = useState('')
+  const [filtros, setFiltros] = useState(2)
   return (
     <Stack gap="4">
       <Input mask="cpf" placeholder="000.000.000-00" value={cpf} onChange={setCpf} clearable />
@@ -265,6 +268,19 @@ function InputExample() {
       <Input mask="phone" placeholder="(00) 00000-0000" value={telefone} onChange={setTelefone} clearable />
       <Input units={[{ id: 'percent', label: '%' }, { id: 'currency', label: 'R$' }]} unit="percent" percentMax={50} />
       <Input variant="secret" hasValue maskedHint="••••1234" onStartEdit={() => {}} onRemove={() => {}} />
+      <Input
+        accessibilityLabel="Buscar com filtros"
+        placeholder="Buscar"
+        value={busca}
+        onChange={setBusca}
+        clearable
+        trailingAction={{
+          icon: <SlidersHorizontal className="size-icon-sm" />,
+          accessibilityLabel: filtros > 0 ? `Filtros, ${filtros} ${filtros === 1 ? 'ativo' : 'ativos'}` : 'Filtros',
+          onPress: () => setFiltros((n) => (n + 1) % 4),
+          badge: filtros,
+        }}
+      />
     </Stack>
   )
 }
@@ -556,6 +572,42 @@ function DrawerExample() {
   )
 }
 
+function SheetExample() {
+  const [open, setOpen] = useState(false)
+  const [soAtivos, setSoAtivos] = useState(false)
+  const [aplicado, setAplicado] = useState(false)
+  return (
+    <>
+      <ButtonGroup>
+        <Button onPress={() => setOpen(true)}>Abrir folha</Button>
+      </ButtonGroup>
+      <Text className="text-sm text-muted-foreground">{aplicado ? 'Filtro aplicado: só ativos' : 'Sem filtro'}</Text>
+      <Sheet
+        open={open}
+        onOpenChange={setOpen}
+        title="Filtros"
+        footer={
+          <ActionBar
+            sticky={false}
+            primary={{
+              label: 'Aplicar',
+              onPress: () => {
+                setAplicado(soAtivos)
+                setOpen(false)
+              },
+            }}
+            cancel={{ label: 'Limpar', onPress: () => setSoAtivos(false) }}
+          />
+        }
+      >
+        <View className="gap-4 px-4 pb-4">
+          <Checkbox label="Só clientes ativos" checked={soAtivos} onCheckedChange={setSoAtivos} />
+        </View>
+      </Sheet>
+    </>
+  )
+}
+
 function SeparatorExample() {
   return (
     <Stack gap="3">
@@ -649,7 +701,9 @@ function AccordionExample() {
 }
 
 function TabsExample() {
+  const naoLidas = (n: number) => (n === 1 ? '1 não lida' : `${n} não lidas`)
   return (
+    <Stack gap="6">
     <Tabs
       accessibilityLabel="Seções do exemplo"
       items={[
@@ -660,6 +714,19 @@ function TabsExample() {
         { value: 'relatorios', label: 'Relatórios', content: 'Exportação de dados em PDF ou CSV.' },
       ]}
     />
+    {/* Abas demais para a largura: com overflow="scroll" elas continuam abas e a lista rola, em vez de virar um Select. */}
+    <Tabs
+      variant="pill"
+      overflow="scroll"
+      accessibilityLabel="Etapas com rolagem"
+      items={[
+        { value: 'ura', label: 'URA/IA', content: 'Conversas com o assistente virtual.' },
+        { value: 'fila', label: 'Fila', count: 3, countLabel: naoLidas, content: 'Conversas esperando uma pessoa.' },
+        { value: 'atendimento', label: 'Atendimento', count: 1, countLabel: naoLidas, content: 'Conversas em andamento.' },
+        { value: 'encerrado', label: 'Encerrado', content: 'Conversas finalizadas.' },
+      ]}
+    />
+    </Stack>
   )
 }
 
@@ -1234,6 +1301,12 @@ export const showcaseGroups: ShowcaseGroup[] = [
         description: 'Painel lateral em tela cheia com confirmação de descarte.',
         render: () => <DrawerExample />,
         codes: codigosPara(['Drawer']),
+      },
+      {
+        name: 'Sheet',
+        description: 'Folha inferior com título, Fechar e rodapé de ações.',
+        render: () => <SheetExample />,
+        codes: codigosPara(['Sheet']),
       },
     ],
   },

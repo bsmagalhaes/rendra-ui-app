@@ -35,7 +35,7 @@ const rotasFixas: RouteSeo[] = [
   {
     path: '/',
     title: `${siteSeo.productName}`,
-    description: 'Design system e boilerplate mobile do Rendra, com 64 componentes de UI, tokens em três camadas e três modelos de marca, em React Native e Expo.',
+    description: 'Design system e boilerplate mobile do Rendra, com 65 componentes de UI, tokens em três camadas e três modelos de marca, em React Native e Expo.',
     indexable: true,
   },
   {

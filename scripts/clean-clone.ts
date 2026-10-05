@@ -72,7 +72,7 @@ export const ARQUIVOS_SO_DO_PACOTE = [
 export const ARQUIVOS_DA_PAGINA = [
   'docs/index.html',
   'docs/icon.svg',
-  'docs/og-image.png',
+  'docs/og-image.jpg',
   'e2e/site.spec.ts',
   'e2e/demo-subcaminho.spec.ts',
   'e2e/demo-fluxos.spec.ts',
@@ -83,6 +83,9 @@ export const ARQUIVOS_DA_PAGINA = [
   'scripts/lib/site-images.test.ts',
   'scripts/lib/readme-links.test.ts',
   'scripts/lib/icon-svg.test.ts',
+  'scripts/lib/site-hero-cores.test.ts',
+  'scripts/lib/imagens-referencias.test.ts',
+  'scripts/lib/f2-docs.test.ts',
 ]
 
 // Achado M8 da validação da entrega (Blocos 5 e 6, Fable): a orquestração inteira ganha `raiz`

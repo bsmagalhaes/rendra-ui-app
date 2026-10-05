@@ -4,6 +4,7 @@ import * as SafeAreaContext from 'react-native-safe-area-context'
 import { BrandProvider } from '../../brand/brand-provider'
 import { ActionBar } from './action-bar'
 import { nodesWithCode } from '../../test-utils/rendra-code'
+import { bordasSemCor, classesDo } from '../../test-utils/bordas'
 import { ShellProvider } from '../app-shell/shell-context'
 import { navComPagina } from '../../test-utils/shell-fixtures'
 
@@ -15,12 +16,10 @@ describe('ActionBar: layout de colunas', () => {
       </BrandProvider>,
     )
     const primary = await findByText('Salvar')
-    // .parent?.parent, não .parent: a Tarefa 32 (achado do Playwright, ver desvios do lote 1)
-    // reestruturou Button para Pressable (className, o root de verdade) > Animated.View (só a
-    // escala do press), porque um Pressable animado por
-    // Animated.createAnimatedComponent(Pressable) não resolve className em CSS real no export
-    // web; o texto agora fica dois níveis abaixo do Pressable, não um.
-    expect(primary.parent?.parent?.props.className.split(' ')).toContain('flex-1')
+    // .parent?.parent?.parent: Button é Pressable (className, o root de verdade) > Animated.View
+    // (só a escala do press) > View (a linha com ícone e texto); um Animated.View com className
+    // perde as classes no web, então o texto fica três níveis abaixo do Pressable.
+    expect(primary.parent?.parent?.parent?.props.className.split(' ')).toContain('flex-1')
   })
 
   it('primary + cancel: cancel flex-3, primary flex-7', async () => {
@@ -35,8 +34,8 @@ describe('ActionBar: layout de colunas', () => {
     )
     const cancel = await findByText('Cancelar')
     const primary = await findByText('Salvar')
-    expect(cancel.parent?.parent?.props.className.split(' ')).toContain('flex-3')
-    expect(primary.parent?.parent?.props.className.split(' ')).toContain('flex-7')
+    expect(cancel.parent?.parent?.parent?.props.className.split(' ')).toContain('flex-3')
+    expect(primary.parent?.parent?.parent?.props.className.split(' ')).toContain('flex-7')
   })
 
   it('secondary vazio ([]) não abre menu (hasMenu deve ser falso)', async () => {
@@ -145,5 +144,19 @@ describe('ActionBar dentro do shell', () => {
     jest.spyOn(SafeAreaContext, 'useSafeAreaInsets').mockReturnValue({ top: 0, bottom: 34, left: 0, right: 0 })
     const { findByTestId } = await noShell({ bottomNav: false })
     expect(StyleSheet.flatten((await findByTestId('barra')).props.style)).toMatchObject({ paddingBottom: 34 })
+  })
+})
+
+
+describe('ActionBar: borda com a cor do token', () => {
+  it('a linha fixa acima das ações usa border-border (não preta)', async () => {
+    const { container } = await render(
+      <BrandProvider>
+        <ActionBar primary={{ label: 'Salvar', onPress: () => {} }} />
+      </BrandProvider>,
+    )
+    const [barra] = nodesWithCode(container, 'ACB-001')
+    expect(classesDo(barra)).toEqual(expect.arrayContaining(['border-t', 'border-border']))
+    expect(bordasSemCor(container)).toEqual([])
   })
 })

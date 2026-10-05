@@ -3,6 +3,7 @@ import { render, fireEvent } from '@testing-library/react-native'
 import { Text as RNText } from 'react-native'
 import { BrandProvider } from '../../brand/brand-provider'
 import { OverlayShell } from './overlay-shell'
+import { bordasSemCor } from '../../test-utils/bordas'
 
 // OverlayShell usa Text (./text), que chama useBrand() e lança fora de <BrandProvider>
 // (mesmo desvio já registrado nas Tarefas 13 a 17).
@@ -85,5 +86,20 @@ describe('OverlayShell', () => {
     )
     const corpo = await findByTestId('shell-corpo')
     expect(corpo.props.tabIndex).toBe(0)
+  })
+})
+
+
+describe('OverlayShell: borda com a cor do token', () => {
+  it('cabeçalho e rodapé usam border-border (não pretos)', async () => {
+    const { container } = await render(
+      withBrand(
+        <OverlayShell title="Título" footer={<RNText>Rodapé</RNText>} onRequestClose={() => {}}>
+          <RNText>Corpo</RNText>
+        </OverlayShell>,
+      ),
+    )
+    expect(bordasSemCor(container)).toEqual([])
+    expect(container.queryAll((no) => String(no.props.className ?? '').split(' ').includes('border-border'))).toHaveLength(2)
   })
 })

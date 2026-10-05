@@ -8,6 +8,8 @@ import {
   ActionBar,
   Badge,
   Button,
+  Card,
+  CardContent,
   Checkbox,
   DropdownMenu,
   DropdownMenuContent,
@@ -95,54 +97,58 @@ export default function Tarefas() {
         <PageHeader title="Tarefas" description="Marque as tarefas e conclua várias de uma vez." />
         <Input value={busca} onChange={setBusca} accessibilityLabel="Buscar tarefa" placeholder="Buscar tarefa" clearable />
         <Text className="text-sm text-muted-foreground">{`Selecionadas: ${selecionadas.size}`}</Text>
-        <List
-          scrollEnabled={false}
-          onReorder={termo ? undefined : reordenar}
-          empty={<EmptyState title="Nenhuma tarefa encontrada" description="Nenhuma tarefa combina com a busca." />}
-          items={visiveis.map((t) => {
-            const concluida = concluidas.has(t.id)
-            return {
-              id: String(t.id),
-              title: t.titulo,
-              description: t.prazo,
-              leading: (
-                <Checkbox
-                  accessibilityLabel={`Selecionar ${t.titulo}`}
-                  checked={selecionadas.has(t.id)}
-                  disabled={concluida}
-                  onCheckedChange={(marcada) => alternarSelecao(t.id, marcada)}
-                />
-              ),
-              trailing: (
-                <View className="flex-row items-center gap-1">
-                  {concluida ? (
-                    <Badge tone="success">Concluída</Badge>
-                  ) : (
-                    <Badge tone={toneDaPrioridade[t.prioridade]}>{t.prioridade}</Badge>
-                  )}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger>
-                      <Button
-                        variant="ghost"
-                        iconOnly
-                        accessibilityLabel={`Ações de ${t.titulo}`}
-                        icon={<MoreHorizontal className="text-foreground" />}
-                      />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent accessibilityLabel={`Ações de ${t.titulo}`}>
-                      <DropdownMenuItem onSelect={() => alternarConclusao(t.id, !concluida)}>
-                        {concluida ? 'Reabrir tarefa' : 'Concluir tarefa'}
-                      </DropdownMenuItem>
-                      {t.clienteId !== undefined ? (
-                        <DropdownMenuItem onSelect={() => enviarAoFunil(t)}>Enviar ao funil</DropdownMenuItem>
-                      ) : null}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </View>
-              ),
-            }
-          })}
-        />
+        <Card>
+          <CardContent className="p-2">
+            <List
+              scrollEnabled={false}
+              onReorder={termo ? undefined : reordenar}
+              empty={<EmptyState title="Nenhuma tarefa encontrada" description="Nenhuma tarefa combina com a busca." />}
+              items={visiveis.map((t) => {
+                const concluida = concluidas.has(t.id)
+                return {
+                  id: String(t.id),
+                  title: t.titulo,
+                  description: t.prazo,
+                  leading: (
+                    <Checkbox
+                      accessibilityLabel={`Selecionar ${t.titulo}`}
+                      checked={selecionadas.has(t.id)}
+                      disabled={concluida}
+                      onCheckedChange={(marcada) => alternarSelecao(t.id, marcada)}
+                    />
+                  ),
+                  trailing: (
+                    <View className="flex-row items-center gap-1">
+                      {concluida ? (
+                        <Badge tone="success">Concluída</Badge>
+                      ) : (
+                        <Badge tone={toneDaPrioridade[t.prioridade]}>{t.prioridade}</Badge>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger>
+                          <Button
+                            variant="ghost"
+                            iconOnly
+                            accessibilityLabel={`Ações de ${t.titulo}`}
+                            icon={<MoreHorizontal className="text-foreground" />}
+                          />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent accessibilityLabel={`Ações de ${t.titulo}`}>
+                          <DropdownMenuItem onSelect={() => alternarConclusao(t.id, !concluida)}>
+                            {concluida ? 'Reabrir tarefa' : 'Concluir tarefa'}
+                          </DropdownMenuItem>
+                          {t.clienteId !== undefined ? (
+                            <DropdownMenuItem onSelect={() => enviarAoFunil(t)}>Enviar ao funil</DropdownMenuItem>
+                          ) : null}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </View>
+                  ),
+                }
+              })}
+            />
+          </CardContent>
+        </Card>
       </ScrollView>
       <ActionBar
         primary={{ label: 'Concluir selecionadas', onPress: concluirSelecionadas, disabled: selecionadas.size === 0 }}

@@ -20,6 +20,7 @@ import { cssInterop } from 'react-native-css-interop'
 import { BrandProvider } from '../../brand/brand-provider'
 import { ButtonGroup } from './button-group'
 import { Button } from './button'
+import { bordasSemCor } from '../../test-utils/bordas'
 import { nodesWithCode } from '../../test-utils/rendra-code'
 
 const options = [
@@ -172,5 +173,19 @@ describe('ButtonGroup: data-rendra (item D12 do levantamento da Sincronizacao 1)
       </BrandProvider>,
     )
     expect(nodesWithCode(container, 'BTNG-001')).toHaveLength(1)
+  })
+})
+
+
+describe('ButtonGroup: borda com a cor do token', () => {
+  it('o grupo segmentado usa border-border (não preta)', async () => {
+    const { container } = await render(
+      <BrandProvider>
+        <ButtonGroup options={options} value="dia" onChange={() => {}} accessibilityLabel="Período" />
+      </BrandProvider>,
+    )
+    const [grupo] = nodesWithCode(container, 'BTNG-001')
+    expect(String(grupo.props.className).split(' ')).toContain('border-border')
+    expect(bordasSemCor(container)).toEqual([])
   })
 })

@@ -4,6 +4,7 @@ import RootLayout from '../../../app/_layout'
 import ComponentesLayout from '../../../app/(shell)/componentes/_layout'
 import ComponentesIndex from '../../../app/(shell)/componentes/index'
 import ComponentesSlugScreen, { generateStaticParams } from '../../../app/(shell)/componentes/[slug]'
+import { nodesWithCode } from '../../test-utils/rendra-code'
 
 function routes() {
   return {
@@ -254,5 +255,31 @@ describe('/componentes/[slug]', () => {
     const layout = await renderRouter(fullRoutes(), { initialUrl: '/componentes/layout' })
     expect(await layout.findByText('Container')).toBeTruthy()
     expect(layout.queryByText('CARD-001')).toBeNull()
+  })
+})
+
+
+describe('/componentes/[slug]: exemplos em cartões', () => {
+  it('cada exemplo do grupo de ações fica no próprio cartão, com título e descrição fora dele', async () => {
+    const context = await renderRouter(fullRoutes(), { initialUrl: '/componentes/acoes' })
+    await screen.findByText('Button')
+    const cartoes = nodesWithCode(context.container, 'CARD-001')
+    expect(cartoes).toHaveLength(4)
+    for (const cartao of cartoes) {
+      expect(within(cartao).queryByText('Button')).toBeNull()
+      expect(within(cartao).queryByText('Botão de ação principal.')).toBeNull()
+    }
+  })
+
+  it('exemplos que já são uma superfície (Card, StatCard, Table, Calendar, Kanban...) não ganham outro cartão por fora', async () => {
+    const context = await renderRouter(fullRoutes(), { initialUrl: '/componentes/exibicao' })
+    await screen.findByText('StatCard')
+    const cartoes = nodesWithCode(context.container, 'CARD-001')
+    const aninhados = cartoes.filter((cartao) => {
+      for (let no = cartao.parent; no; no = no.parent) if (no.props?.dataSet?.rendra === 'CARD-001') return true
+      return false
+    })
+    // o Card de exemplo e o Card dentro do exemplo da Lista não ficam dentro de outro cartão
+    expect(aninhados.map((c) => c.props.dataSet.rendra)).toEqual([])
   })
 })

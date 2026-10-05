@@ -10,6 +10,8 @@ import {
   Avatar,
   Badge,
   Button,
+  Card,
+  CardContent,
   Drawer,
   DropdownMenu,
   DropdownMenuContent,
@@ -131,54 +133,58 @@ export default function Clientes() {
           {`Mostrando ${itens.length} de ${total} ${total === 1 ? 'cliente' : 'clientes'}`}
         </Text>
 
-        <List
-          scrollEnabled={false}
-          empty={
-            <EmptyState
-              title="Nenhum cliente encontrado"
-              description="Nenhum cliente combina com a busca e os filtros."
-              actions={<Button onPress={limpar}>Limpar filtros</Button>}
+        <Card>
+          <CardContent className="gap-4 p-2">
+            <List
+              scrollEnabled={false}
+              empty={
+                <EmptyState
+                  title="Nenhum cliente encontrado"
+                  description="Nenhum cliente combina com a busca e os filtros."
+                  actions={<Button onPress={limpar}>Limpar filtros</Button>}
+                />
+              }
+              items={itens.map((c) => ({
+                id: String(c.id),
+                title: c.nome,
+                description: `${c.segmento} · ${c.cidade}`,
+                leading: <Avatar name={c.nome} />,
+                href: `/clientes/${c.id}`,
+                trailing: (
+                  <View className="flex-row items-center gap-1">
+                    <Badge tone={statusTone[c.situacao]}>{c.situacao}</Badge>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger>
+                        <Button
+                          variant="ghost"
+                          iconOnly
+                          accessibilityLabel={`Ações de ${c.nome}`}
+                          icon={<MoreHorizontal className="text-foreground" />}
+                        />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent accessibilityLabel={`Ações de ${c.nome}`}>
+                        <DropdownMenuItem onSelect={() => router.push(`/clientes/${c.id}`)}>Ver detalhes</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => toast.info('Edição simulada nesta demonstração')}>
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => toast.info('Cliente arquivado (simulado)')}>
+                          Arquivar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem destructive onSelect={() => setAlvo(c)}>
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </View>
+                ),
+              }))}
             />
-          }
-          items={itens.map((c) => ({
-            id: String(c.id),
-            title: c.nome,
-            description: `${c.segmento} · ${c.cidade}`,
-            leading: <Avatar name={c.nome} />,
-            href: `/clientes/${c.id}`,
-            trailing: (
-              <View className="flex-row items-center gap-1">
-                <Badge tone={statusTone[c.situacao]}>{c.situacao}</Badge>
-                <DropdownMenu>
-                  <DropdownMenuTrigger>
-                    <Button
-                      variant="ghost"
-                      iconOnly
-                      accessibilityLabel={`Ações de ${c.nome}`}
-                      icon={<MoreHorizontal className="text-foreground" />}
-                    />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent accessibilityLabel={`Ações de ${c.nome}`}>
-                    <DropdownMenuItem onSelect={() => router.push(`/clientes/${c.id}`)}>Ver detalhes</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => toast.info('Edição simulada nesta demonstração')}>
-                      Editar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => toast.info('Cliente arquivado (simulado)')}>
-                      Arquivar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem destructive onSelect={() => setAlvo(c)}>
-                      Excluir
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </View>
-            ),
-          }))}
-        />
 
-        {itens.length < total ? (
-          <ActionBar sticky={false} primary={{ label: 'Carregar mais', onPress: () => setPaginas((p) => p + 1) }} />
-        ) : null}
+            {itens.length < total ? (
+              <ActionBar sticky={false} primary={{ label: 'Carregar mais', onPress: () => setPaginas((p) => p + 1) }} />
+            ) : null}
+          </CardContent>
+        </Card>
       </ScrollView>
 
       <Drawer

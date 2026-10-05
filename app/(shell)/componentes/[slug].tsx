@@ -3,7 +3,23 @@ import { useLocalSearchParams } from 'expo-router'
 import { useDocumentTitle } from '../../../src/lib/use-document-title'
 import { showcaseGroups } from '../../../src/config/showcase'
 import { Container, Inline, PageHeader, Section, Stack } from '../../../src/components/layout'
-import { Badge } from '../../../src/components/ui'
+import { Badge, Card, CardContent } from '../../../src/components/ui'
+
+/**
+ * Exemplos cuja raiz já é uma superfície (cartão, indicador, tabela, calendário, quadro, formulário
+ * em seções): não ganham outro cartão por fora, para não ter cartão dentro de cartão.
+ */
+const COM_SUPERFICIE_PROPRIA = new Set([
+  'Card',
+  'StatCard',
+  'OtpInput',
+  'Formulário (RHF)',
+  'DataToolbar',
+  'Table',
+  'Calendar',
+  'Kanban',
+  'Kanban com destinos',
+])
 
 export function generateStaticParams() {
   return showcaseGroups.map((group) => ({ slug: group.slug }))
@@ -38,7 +54,13 @@ export default function ComponentesSlugScreen() {
                   ))}
                 </Inline>
               ) : null}
-              {entry.render()}
+              {COM_SUPERFICIE_PROPRIA.has(entry.name) ? (
+                entry.render()
+              ) : (
+                <Card>
+                  <CardContent>{entry.render()}</CardContent>
+                </Card>
+              )}
             </Section>
           ))}
         </Stack>

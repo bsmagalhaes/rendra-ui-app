@@ -110,6 +110,14 @@ suite('docs/BRIEFING_MODELO.md amarrado ao código real', () => {
     expect(briefing).toContain(frase)
   })
 
+  it('orienta abas demais (overflow="scroll") e oferece busca com filtros (trailingAction e Sheet)', () => {
+    expect(briefing).toContain('overflow="scroll"')
+    expect(briefing).toContain('countLabel')
+    expect(briefing).toContain('Busca com filtros')
+    expect(briefing).toContain('trailingAction')
+    expect(briefing).toContain('FOL-001')
+  })
+
   it('todo código do CATALOG aparece no briefing', () => {
     const ausentes = CATALOG.map((entrada) => entrada.code).filter((code) => !briefing.includes(code))
     expect(ausentes).toEqual([])

@@ -1,4 +1,5 @@
 import React from 'react'
+import { View } from 'react-native'
 import { render, fireEvent, waitFor } from '@testing-library/react-native'
 import { BrandProvider } from '../../brand/brand-provider'
 import { Button } from './button'
@@ -62,6 +63,27 @@ describe('Button', () => {
     const button = await findByRole('button')
     const classes = button.props.className.split(' ')
     expect(classes).toContain(expectedClass)
+  })
+
+  // Ícone ao lado do texto: o `Animated.View` perde `className` no web (o filho saía em coluna, com o
+  // ícone acima do texto). O layout em linha vive num `View` comum interno, com `min-w-0 shrink`
+  // para o rótulo longo não vazar do botão.
+  it('ícone e texto ficam numa linha: o View comum interno leva flex-row, e o Animated.View não', async () => {
+    const { findByText } = await render(
+      <BrandProvider>
+        <Button onPress={() => {}} icon={<View testID="ico" />} iconRight={<View testID="ico-dir" />}>
+          Filtros
+        </Button>
+      </BrandProvider>,
+    )
+    const texto = await findByText('Filtros')
+    const linha = texto.parent!
+    const animado = linha.parent!
+    expect(animado.parent?.props.accessibilityRole).toBe('button')
+    expect(String(animado.props.className ?? '')).not.toContain('flex-row')
+    expect(animado.props.style).toBeDefined()
+    const classes = String(linha.props.className).split(' ')
+    expect(classes).toEqual(expect.arrayContaining(['flex-row', 'items-center', 'gap-2', 'min-w-0', 'shrink']))
   })
 
   it('disabled: accessibilityState.disabled true e não chama onPress', async () => {

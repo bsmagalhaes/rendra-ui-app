@@ -10,7 +10,7 @@ describe('applyRouteSeo', () => {
       description: 'Vitrine dos 43 componentes de UI do Rendra App.',
       url: 'https://bsmagalhaes.github.io/rendra-ui-app/componentes',
       siteName: 'Rendra App',
-      ogImageUrl: 'https://bsmagalhaes.github.io/rendra-ui-app/og-image.png',
+      ogImageUrl: 'https://bsmagalhaes.github.io/rendra-ui-app/og-image.jpg',
     })
     expect(saida).toContain('<title>Componentes · Rendra App</title>')
     expect(saida).not.toContain('data-rh')
@@ -21,13 +21,13 @@ describe('applyRouteSeo', () => {
       html: fixture, title: 't', description: 'd'.repeat(60),
       url: 'https://bsmagalhaes.github.io/rendra-ui-app/componentes',
       siteName: 'Rendra App',
-      ogImageUrl: 'https://bsmagalhaes.github.io/rendra-ui-app/og-image.png',
+      ogImageUrl: 'https://bsmagalhaes.github.io/rendra-ui-app/og-image.jpg',
     })
     expect(saida).toContain('name="description" content="' + 'd'.repeat(60) + '"')
     expect(saida).toContain('rel="canonical" href="https://bsmagalhaes.github.io/rendra-ui-app/componentes"')
     expect(saida).toContain('name="robots" content="index, follow"')
     expect(saida.match(/name="robots" content="index, follow"/g)).toHaveLength(1)
-    expect(saida).toContain('property="og:image" content="https://bsmagalhaes.github.io/rendra-ui-app/og-image.png"')
+    expect(saida).toContain('property="og:image" content="https://bsmagalhaes.github.io/rendra-ui-app/og-image.jpg"')
     expect(saida).toContain('property="og:locale" content="pt_BR"')
   })
 
@@ -36,7 +36,7 @@ describe('applyRouteSeo', () => {
       html: fixture, title: 't', description: 'd'.repeat(60),
       url: 'https://bsmagalhaes.github.io/rendra-ui-app/_sitemap',
       siteName: 'Rendra App',
-      ogImageUrl: 'https://bsmagalhaes.github.io/rendra-ui-app/og-image.png',
+      ogImageUrl: 'https://bsmagalhaes.github.io/rendra-ui-app/og-image.jpg',
       indexable: false,
     })
     expect(saida).toContain('name="robots" content="noindex, nofollow"')
@@ -47,7 +47,7 @@ describe('applyRouteSeo', () => {
       html: fixture, title: 't', description: 'd'.repeat(60),
       url: 'https://bsmagalhaes.github.io/rendra-ui-app/',
       siteName: 'Rendra App',
-      ogImageUrl: 'https://bsmagalhaes.github.io/rendra-ui-app/og-image.png',
+      ogImageUrl: 'https://bsmagalhaes.github.io/rendra-ui-app/og-image.jpg',
     })
     expect(saida).toContain('<html lang="pt-BR">')
   })
@@ -57,7 +57,7 @@ describe('applyRouteSeo', () => {
       html: fixture, title: 'A & B', description: 'd'.repeat(58) + ' & X',
       url: 'https://bsmagalhaes.github.io/rendra-ui-app/',
       siteName: 'Rendra App',
-      ogImageUrl: 'https://bsmagalhaes.github.io/rendra-ui-app/og-image.png',
+      ogImageUrl: 'https://bsmagalhaes.github.io/rendra-ui-app/og-image.jpg',
     })
     expect(saida).toContain('<title>A &amp; B</title>')
     expect(saida).toContain('name="description" content="' + 'd'.repeat(58) + ' &amp; X"')
@@ -70,7 +70,7 @@ describe('applyRouteSeo', () => {
       description: 'd'.repeat(60),
       url: 'https://bsmagalhaes.github.io/rendra-ui-app/',
       siteName: 'Rendra App',
-      ogImageUrl: 'https://bsmagalhaes.github.io/rendra-ui-app/og-image.png',
+      ogImageUrl: 'https://bsmagalhaes.github.io/rendra-ui-app/og-image.jpg',
     }
     const primeira = applyRouteSeo(entrada)
     const segunda = applyRouteSeo({ ...entrada, html: primeira })

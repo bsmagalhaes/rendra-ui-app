@@ -10,6 +10,7 @@ import { registerCSS, resetComponents } from 'react-native-css-interop/test'
 import { cssInterop } from 'react-native-css-interop'
 import { BrandProvider } from '../../brand'
 import { Tabs } from './tabs'
+import { bordasSemCor } from '../../test-utils/bordas'
 import { nodesWithCode } from '../../test-utils/rendra-code'
 
 const items = [
@@ -195,5 +196,112 @@ describe('Tabs: data-rendra por variante (item D12 do levantamento da Sincroniza
       <BrandProvider><Tabs items={items} variant="pill" accessibilityLabel="Secoes" /></BrandProvider>,
     )
     expect(nodesWithCode(container, 'ABA-002')).toHaveLength(1)
+  })
+})
+
+
+describe('Tabs: borda com a cor do token', () => {
+  it('a variante line desenha a linha da lista com border-border (não preta)', async () => {
+    const { container } = await render(
+      <BrandProvider>
+        <Tabs items={items} variant="line" accessibilityLabel="Secoes" />
+      </BrandProvider>,
+    )
+    expect(bordasSemCor(container)).toEqual([])
+    expect(container.queryAll((no) => String(no.props.className ?? '').split(' ').includes('border-border'))).not.toHaveLength(0)
+  })
+})
+
+
+describe('Tabs: rolagem horizontal (overflow="scroll") e countLabel', () => {
+  const quatro = [
+    { value: 'ura', label: 'URA/IA', content: 'Conteúdo da URA.' },
+    { value: 'fila', label: 'Fila', count: 1, content: 'Conteúdo da fila.' },
+    { value: 'atendimento', label: 'Atendimento', count: 2, content: 'Conteúdo do atendimento.' },
+    { value: 'encerrado', label: 'Encerrado', content: 'Conteúdo do encerrado.' },
+  ]
+  const naoLidas = (n: number) => (n === 1 ? '1 não lida' : `${n} não lidas`)
+
+  it('com overflow="scroll" e contêiner estreito, as quatro abas continuam abas (sem Select) e a lista rola', async () => {
+    const { container } = await render(
+      <BrandProvider>
+        <Tabs items={quatro} variant="pill" overflow="scroll" accessibilityLabel="Etapas" testID="tabs" />
+      </BrandProvider>,
+    )
+    await medir('tabs-container', 120)
+    expect(screen.queryByRole('combobox')).toBeNull()
+    for (const nome of [/^URA\/IA$/, /^Fila/, /^Atendimento/, /^Encerrado$/]) {
+      expect(screen.getByRole('tab', { name: nome })).toBeTruthy()
+    }
+    // a aba inicial (a primeira) está selecionada
+    expect(screen.getByRole('tab', { name: 'URA/IA' }).props.accessibilityState.selected).toBe(true)
+    // a lista fica dentro de um ScrollView horizontal, sem barra de rolagem
+    const rolagens = container.queryAll((no) => no.props.horizontal === true)
+    expect(rolagens).toHaveLength(1)
+    expect(rolagens[0].props.showsHorizontalScrollIndicator).toBe(false)
+    // sem a cópia de medição
+    expect(screen.queryByTestId('tabs-medida', { includeHiddenElements: true })).toBeNull()
+  })
+
+  it('tocar na última aba, que só se alcança rolando, troca o painel', async () => {
+    await render(
+      <BrandProvider>
+        <Tabs items={quatro} overflow="scroll" accessibilityLabel="Etapas" testID="tabs" />
+      </BrandProvider>,
+    )
+    await medir('tabs-container', 120)
+    await fireEvent.press(screen.getByRole('tab', { name: 'Encerrado' }))
+    expect(await screen.findByText('Conteúdo do encerrado.')).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Encerrado' }).props.accessibilityState.selected).toBe(true)
+  })
+
+  it('variant line em scroll: a linha de baixo fica no contêiner da rolagem, não no conteúdo rolável', async () => {
+    const { container } = await render(
+      <BrandProvider>
+        <Tabs items={quatro} variant="line" overflow="scroll" accessibilityLabel="Etapas" testID="tabs" />
+      </BrandProvider>,
+    )
+    const [rolagem] = container.queryAll((no) => no.props.horizontal === true)
+    const dentro = rolagem.queryAll((no) => String(no.props.className ?? '').split(' ').includes('border-b'))
+    expect(dentro).toHaveLength(0)
+    const fora = container.queryAll((no) => {
+      const classes = String(no.props.className ?? '').split(' ')
+      return classes.includes('border-b') && classes.includes('border-border')
+    })
+    expect(fora).toHaveLength(1)
+  })
+
+  it('o padrão não mudou: sem overflow, lista larga e contêiner estreito continuam virando Select', async () => {
+    await render(
+      <BrandProvider><Tabs items={quatro} accessibilityLabel="Etapas" testID="tabs" /></BrandProvider>,
+    )
+    await medir('tabs-medida', 500)
+    await medir('tabs-container', 300)
+    expect(await screen.findByRole('combobox')).toBeTruthy()
+  })
+
+  it('countLabel entra no nome acessível, com a regra de singular do chamador, e a pílula mostra só o número', async () => {
+    await render(
+      <BrandProvider>
+        <Tabs
+          items={quatro.map((i) => ({ ...i, countLabel: naoLidas }))}
+          overflow="scroll"
+          accessibilityLabel="Etapas"
+          testID="tabs"
+        />
+      </BrandProvider>,
+    )
+    expect(screen.getByRole('tab', { name: 'Atendimento 2 não lidas' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Fila 1 não lida' })).toBeTruthy()
+    // sem count, sem nome acessível próprio
+    expect(screen.getByRole('tab', { name: 'URA/IA' })).toBeTruthy()
+    expect(within(screen.getByRole('tab', { name: 'Atendimento 2 não lidas' })).getByText('2')).toBeTruthy()
+  })
+
+  it('sem countLabel o nome acessível continua "rótulo número"', async () => {
+    await render(
+      <BrandProvider><Tabs items={quatro} overflow="scroll" accessibilityLabel="Etapas" testID="tabs" /></BrandProvider>,
+    )
+    expect(screen.getByRole('tab', { name: 'Atendimento 2' })).toBeTruthy()
   })
 })

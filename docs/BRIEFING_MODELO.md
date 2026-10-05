@@ -148,6 +148,8 @@ O código de catálogo, como `BTN-001`, diz qual componente e qual variante; o c
 |---|---|---|
 | Botão de ação | `BTN-001` Botão primário | `BTN-002` secundário, `BTN-003` contornado, `BTN-004` fantasma, `BTN-005` destrutivo, `BTN-006` link |
 | Abas | `ABA-001` Abas em linha | `ABA-002` Abas em pílula |
+| Abas demais para a largura do celular | `ABA-001` ou `ABA-002` com `overflow="scroll"`: as abas rolam na horizontal; `countLabel` diz o número por extenso para leitor de tela (ex.: "Fila 3 não lidas") | Sem `overflow`, a lista vira um Select (`SEL-001`) |
+| Busca com filtros | `CAMP-001` Campo de texto com `trailingAction` (botão de filtros dentro do campo, com selo do número de filtros) e `FOL-001` Folha inferior com as opções e Limpar e Aplicar no rodapé | `DTB-001` Barra de ferramentas da listagem, quando a listagem é uma tabela |
 | Janela de confirmação | `MOD-001` Modal de confirmação (serve também para ação destrutiva) | `MOD-002` Modal de formulário (até 3 campos), `MOD-003` Modal informativo |
 | Escolha de uma opção entre poucas | `RDO-001` Opções em lista | `RDO-002` Opções em cartões |
 | Foto de perfil | `AVT-001` Avatar | `AVT-002` Avatar em grupo |
@@ -155,6 +157,7 @@ O código de catálogo, como `BTN-001`, diz qual componente e qual variante; o c
 | Escolher uma opção numa lista longa | `SEL-001` Select, abre numa folha inferior | |
 | Código recebido por SMS ou e-mail | `OTP-001` Código de verificação | |
 | Tela cheia para editar sem sair do fluxo | `GAV-001` Gaveta | |
+| Filtros ou opções rápidas que sobem de baixo | `FOL-001` Folha inferior (só no app), com título, Fechar e rodapé de ações | |
 | Ação no aparelho fora da tela | `DDM-001` Menu suspenso, abre como folha | |
 | Lista de itens | `LIST-001` Lista | `LIST-002` Lista reordenável (com `onReorder`: alça de arraste e menu Mover) |
 | Gráfico de dados (import de `@rendra-ui/app/chart`) | `CHT-002` Gráfico de barras | `CHT-001` linha, `CHT-003` área, `CHT-004` pizza, `CHT-005` combinado, `CHT-006` velocímetro de meta, `CHT-007` funil |
@@ -191,6 +194,7 @@ Demais componentes do catálogo:
 | `KANB-001` | Quadro kanban | Para um funil de etapas com cartões que se movem entre colunas. |
 | `KANB-002` | Quadro kanban com destinos | Quando o cartão pode ir para uma ação além de outra coluna, como "Marcar como ganho", pelo menu "Mover para". |
 | `CAMP-001` | Campo de texto | Para texto, número, senha, telefone, moeda ou qualquer valor de uma linha. |
+| `FOL-001` | Folha inferior | Para filtros, opções e ações rápidas que sobem de baixo no celular, com título, botão Fechar e rodapé de ações, sem sair da tela. Só existe no app. |
 | `SEP-001` | Separador | Para dividir conteúdo dentro de um card, no lugar de um card dentro de outro. |
 | `SLD-001` | Slider | Para escolher um número ou uma faixa dentro de um intervalo, arrastando. |
 | `STAT-001` | Card de indicador | Para um número de destaque com variação, num painel. |

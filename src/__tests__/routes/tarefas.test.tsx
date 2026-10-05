@@ -1,4 +1,4 @@
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 import { screen } from 'expo-router/testing-library'
 import { router } from 'expo-router'
 import { Text } from 'react-native'
@@ -9,6 +9,7 @@ import { toast } from '../../components/ui'
 import { restaurarPlanejamento } from '../../demo/planning-store'
 import { tasks } from '../../mocks/tasks'
 import { renderDemo } from '../../test-utils/render-demo'
+import { nodesWithCode } from '../../test-utils/rendra-code'
 
 const rotas = {
   '(shell)/_layout': ShellLayout,
@@ -154,5 +155,18 @@ describe('tarefas', () => {
       await fireEvent.press(screen.getByRole('menuitem', { name: 'Concluir tarefa' }))
       expect(titulos().slice(0, 3)).toEqual([tasks[1]!.titulo, tasks[0]!.titulo, tasks[2]!.titulo])
     })
+  })
+})
+
+
+describe('tarefas: conteúdo no cartão', () => {
+  it('a lista fica dentro de um cartão (CARD-001); a busca e o contador de selecionadas ficam fora', async () => {
+    const tela = await renderDemo(rotas, '/tarefas')
+    await screen.findAllByText(tasks[0]!.titulo)
+    const cartoes = nodesWithCode(tela.container, 'CARD-001')
+    expect(cartoes).toHaveLength(1)
+    expect(within(cartoes[0]!).getAllByText(tasks[0]!.titulo).length).toBeGreaterThan(0)
+    expect(within(cartoes[0]!).queryByLabelText('Buscar tarefa')).toBeNull()
+    expect(within(cartoes[0]!).queryByText('Selecionadas: 0')).toBeNull()
   })
 })

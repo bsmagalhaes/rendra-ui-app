@@ -1,4 +1,11 @@
-import { imagensForaDoPadrao, readImageSize, readPngSize, readWebpSize } from './docs-images-check'
+import { imagensForaDoPadrao, readImageSize, readJpegSize, readPngSize, readWebpSize } from './docs-images-check'
+
+/** JPEG mínimo: SOI, um segmento APP0 e o SOF0 com altura e largura. */
+function jpeg(largura: number, altura: number): Uint8Array {
+  const app0 = [0xff, 0xe0, 0x00, 0x04, 0x00, 0x00]
+  const sof = [0xff, 0xc0, 0x00, 0x0b, 0x08, altura >> 8, altura & 0xff, largura >> 8, largura & 0xff, 0x01, 0x01, 0x11, 0x00]
+  return Uint8Array.from([0xff, 0xd8, ...app0, ...sof, 0xff, 0xd9])
+}
 
 function png(largura: number, altura: number): Uint8Array {
   const bytes = new Uint8Array(24)
@@ -59,6 +66,14 @@ describe('docs-images-check', () => {
       { nome: 'og-image.png', bytes: png(1200, 630) },
     ]
     expect(imagensForaDoPadrao(lista)).toEqual(['safira-componentes.webp'])
+  })
+
+  it('lê o tamanho de um JPEG e confere a og-image.jpg em 1200x630', () => {
+    expect(readJpegSize(jpeg(1200, 630))).toEqual({ width: 1200, height: 630 })
+    expect(readImageSize(jpeg(1200, 630))).toEqual({ width: 1200, height: 630 })
+    expect(imagensForaDoPadrao([{ nome: 'og-image.jpg', bytes: jpeg(1200, 630) }])).toEqual([])
+    expect(imagensForaDoPadrao([{ nome: 'og-image.jpg', bytes: jpeg(1200, 600) }])).toEqual(['og-image.jpg'])
+    expect(() => readJpegSize(Uint8Array.from([1, 2, 3]))).toThrow(/JPEG/)
   })
 
   it('acusa og-image fora de 1200x630', () => {

@@ -2,6 +2,7 @@ import { fireEvent, render } from '@testing-library/react-native'
 import { BrandProvider } from '../../brand'
 import { Accordion, accordionHeight } from './accordion'
 import { nodesWithCode } from '../../test-utils/rendra-code'
+import { bordasSemCor, classesDo } from '../../test-utils/bordas'
 
 describe('accordionHeight', () => {
   it('aberto com altura medida, devolve a altura', () => {
@@ -86,5 +87,16 @@ describe('Accordion', () => {
   it('carrega dataSet.rendra = ACRN-001 na raiz (item D12 do levantamento da Sincronizacao 1)', async () => {
     const { container } = await render(<BrandProvider><Accordion items={items} /></BrandProvider>)
     expect(nodesWithCode(container, 'ACRN-001')).toHaveLength(1)
+  })
+})
+
+
+describe('Accordion: borda com a cor do token', () => {
+  it('a linha entre os itens usa border-border (não preta)', async () => {
+    const { container } = await render(<BrandProvider><Accordion items={items} /></BrandProvider>)
+    expect(bordasSemCor(container)).toEqual([])
+    const separados = container.queryAll((no) => classesDo(no).includes('border-b'))
+    expect(separados.length).toBeGreaterThan(0)
+    for (const no of separados) expect(classesDo(no)).toContain('border-border')
   })
 })

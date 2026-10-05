@@ -41,7 +41,7 @@ export function ButtonGroup({
         accessibilityRole={a11yPresets.radiogroup.accessibilityRole}
         accessibilityLabel={accessibilityLabel}
         dataSet={{ rendra: 'BTNG-001' }}
-        className={cn('flex-row flex-wrap gap-1 rounded-control border bg-muted p-1', fullWidth && 'w-full', className)}
+        className={cn('flex-row flex-wrap gap-1 rounded-control border border-border bg-muted p-1', fullWidth && 'w-full', className)}
       >
         {options.map((option) => {
           const checked = option.value === value

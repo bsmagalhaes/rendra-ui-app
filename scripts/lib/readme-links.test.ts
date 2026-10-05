@@ -28,9 +28,9 @@ describe('README', () => {
   })
 
   it('as quatro imagens de destaque são de celular e todas existem', () => {
-    const imagens = [...readme.matchAll(/docs\/images\/([a-z0-9-]+\.webp)/g)].map((m) => m[1] as string)
+    const imagens = [...readme.matchAll(/docs\/images\/([a-z0-9-]+\.(?:webp|png|jpg))/g)].map((m) => m[1] as string)
     expect(imagens.length).toBeGreaterThanOrEqual(4)
-    for (const nome of imagens.slice(0, 4)) expect(nome).toMatch(/-mobile\.webp$/)
+    for (const nome of imagens.slice(0, 4)) expect(nome).toMatch(/-mobile\.(webp|png|jpg)$/)
     for (const nome of imagens) expect(existsSync(join(process.cwd(), 'docs', 'images', nome))).toBe(true)
   })
 

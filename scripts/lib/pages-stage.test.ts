@@ -14,7 +14,7 @@ const { join } = require('path') as { join: (...partes: string[]) => string }
 import { notFoundRedirectScript, rootUrlFrom, stageDirFrom, stagePages } from './pages-stage'
 
 const SITE = 'https://bsmagalhaes.github.io/rendra-ui-app/'
-const ARQUIVOS = ['index.html', 'icon.svg', 'og-image.png', 'phone.css']
+const ARQUIVOS = ['index.html', 'icon.svg', 'og-image.jpg', 'phone.css']
 const COMANDOS = ['npm install', 'npm install @rendra-ui/app']
 const HTML_404 = '<!doctype html><html><head><title>Página não encontrada</title></head><body>404 da demo</body></html>'
 const SITEMAP_DEMO = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset><url><loc>${SITE}demo/componentes</loc></url></urlset>\n`

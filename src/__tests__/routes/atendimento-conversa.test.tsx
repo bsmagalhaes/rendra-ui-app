@@ -43,15 +43,18 @@ describe('atendimento: conversa', () => {
 
   it('ao voltar para a lista, a conversa aberta não tem mais o contador de não lidas', async () => {
     await renderDemo(rotas, '/atendimento')
-    await fireEvent.press(await screen.findByRole('tab', { name: 'Atendimento 2' }))
+    await fireEvent.press(await screen.findByRole('tab', { name: 'Atendimento 2 não lidas' }))
     expect(within(await screen.findByTestId('conversation-item-t2')).getByText('2')).toBeTruthy()
     await fireEvent.press(within(screen.getByTestId('conversation-item-t2')).getByRole('button'))
     expect(await screen.findByLabelText('Mensagem')).toBeTruthy()
     await act(async () => {
       router.back()
     })
-    expect(await screen.findByRole('tab', { name: 'Atendimento 2' })).toBeTruthy()
-    expect(within(screen.getByTestId('conversation-item-t2')).queryByText('2')).toBeNull()
+    // abrir a conversa zerou as não lidas do Carlos: a aba perde o balão
+    expect(await screen.findByRole('tab', { name: 'Atendimento' })).toBeTruthy()
+    expect(screen.queryByRole('tab', { name: 'Atendimento 2 não lidas' })).toBeNull()
+    await fireEvent.press(screen.getByRole('tab', { name: 'Atendimento' }))
+    expect(within(await screen.findByTestId('conversation-item-t2')).queryByText('2')).toBeNull()
   })
 
   it('o selo do Atendimento no menu mostra 3 não lidas e cai para 1 depois de abrir a conversa do Carlos', async () => {
@@ -61,7 +64,7 @@ describe('atendimento: conversa', () => {
     const itemAntes = within(menu).getByRole('link', { name: /Atendimento/ })
     expect(within(itemAntes).getByText('3')).toBeTruthy()
     await fireEvent.press(screen.getByLabelText('Fechar menu'))
-    await fireEvent.press(await screen.findByRole('tab', { name: 'Atendimento 2' }))
+    await fireEvent.press(await screen.findByRole('tab', { name: 'Atendimento 2 não lidas' }))
     await fireEvent.press(within(await screen.findByTestId('conversation-item-t2')).getByRole('button'))
     await screen.findByLabelText('Mensagem')
     await fireEvent.press(await screen.findByRole('button', { name: 'Abrir menu' }))
@@ -125,7 +128,10 @@ describe('atendimento: conversa da fila', () => {
     await act(async () => {
       router.back()
     })
-    expect(await screen.findByRole('tab', { name: 'Fila 0' })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: 'Atendimento 3' })).toBeTruthy()
+    // sem conversas não lidas na Fila; a Diana assumida entra em Atendimento já lida (só o Carlos tem 2)
+    expect(await screen.findByRole('tab', { name: 'Fila' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Atendimento 2 não lidas' })).toBeTruthy()
+    await fireEvent.press(screen.getByRole('tab', { name: 'Atendimento 2 não lidas' }))
+    expect(await screen.findByTestId('conversation-item-t3')).toBeTruthy()
   })
 })

@@ -1,5 +1,6 @@
 import { View, ScrollView } from 'react-native'
 import { Text } from '../../../src/components/internal/text'
+import { Card, CardContent } from '../../../src/components/ui'
 import { useBrand } from '../../../src/brand'
 import { contrast } from '../../../src/brand/palette'
 import { useDocumentTitle } from '../../../src/lib/use-document-title'
@@ -55,47 +56,57 @@ export default function TokensIndex() {
       <Text weight="semibold" className="text-2xl text-foreground">Tokens</Text>
       <Text className="text-sm text-muted-foreground">Paleta, tipografia, espaço, raio e sombra do modelo ativo.</Text>
 
-      <View className="gap-3">
-        <SectionTitle>Paleta</SectionTitle>
-        {pairs.map(([label, fg, bg]) => <AAPair key={label} label={label} fg={fg} bg={bg} />)}
-      </View>
+      <Card>
+        <CardContent className="gap-3">
+            <SectionTitle>Paleta</SectionTitle>
+            {pairs.map(([label, fg, bg]) => <AAPair key={label} label={label} fg={fg} bg={bg} />)}
+        </CardContent>
+      </Card>
 
-      <View className="gap-3">
-        <SectionTitle>Tipografia</SectionTitle>
-        {Object.entries(TEXT_SIZE_CLASSES).map(([size, className]) => (
-          <Text key={size} className={`${className} text-foreground`}>{`text-${size}`}</Text>
-        ))}
-      </View>
+      <Card>
+        <CardContent className="gap-3">
+            <SectionTitle>Tipografia</SectionTitle>
+            {Object.entries(TEXT_SIZE_CLASSES).map(([size, className]) => (
+              <Text key={size} className={`${className} text-foreground`}>{`text-${size}`}</Text>
+            ))}
+        </CardContent>
+      </Card>
 
-      <View className="gap-3">
-        <SectionTitle>Espaço</SectionTitle>
-        <View className="flex-row flex-wrap items-end gap-4">
-          {Object.entries(SPACING_WIDTH_CLASSES).map(([token, widthClassName]) => (
-            <View key={token} className="items-start gap-1">
-              <View testID={`espaco-${token}`} className={`h-4 ${widthClassName} bg-primary`} />
-              <Text className="text-xs text-muted-foreground">{token}</Text>
+      <Card>
+        <CardContent className="gap-3">
+            <SectionTitle>Espaço</SectionTitle>
+            <View className="flex-row flex-wrap items-end gap-4">
+              {Object.entries(SPACING_WIDTH_CLASSES).map(([token, widthClassName]) => (
+                <View key={token} className="items-start gap-1">
+                  <View testID={`espaco-${token}`} className={`h-4 ${widthClassName} bg-primary`} />
+                  <Text className="text-xs text-muted-foreground">{token}</Text>
+                </View>
+              ))}
             </View>
-          ))}
-        </View>
-      </View>
+        </CardContent>
+      </Card>
 
-      <View className="gap-3">
-        <SectionTitle>Raio</SectionTitle>
-        <View className="flex-row flex-wrap gap-4">
-          {Object.entries(RADIUS_CLASSES).map(([role, className]) => (
-            <View key={role} className={`size-12 bg-primary-soft ${className}`} />
-          ))}
-        </View>
-      </View>
+      <Card>
+        <CardContent className="gap-3">
+            <SectionTitle>Raio</SectionTitle>
+            <View className="flex-row flex-wrap gap-4">
+              {Object.entries(RADIUS_CLASSES).map(([role, className]) => (
+                <View key={role} className={`size-12 bg-primary-soft ${className}`} />
+              ))}
+            </View>
+        </CardContent>
+      </Card>
 
-      <View className="gap-3">
-        <SectionTitle>Sombra</SectionTitle>
-        <View className="flex-row flex-wrap gap-4">
-          {Object.entries(SHADOW_CLASSES).map(([level, className]) => (
-            <View key={level} className={`size-12 rounded-control bg-card ${className}`} />
-          ))}
-        </View>
-      </View>
+      <Card>
+        <CardContent className="gap-3">
+            <SectionTitle>Sombra</SectionTitle>
+            <View className="flex-row flex-wrap gap-4">
+              {Object.entries(SHADOW_CLASSES).map(([level, className]) => (
+                <View key={level} className={`size-12 rounded-control bg-card ${className}`} />
+              ))}
+            </View>
+        </CardContent>
+      </Card>
     </ScrollView>
   )
 }

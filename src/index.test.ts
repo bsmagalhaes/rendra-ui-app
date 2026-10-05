@@ -24,6 +24,11 @@ describe('src/index.ts, entrada principal do pacote', () => {
     expect(pacote.RENDRA_CREDIT_TEXT).toBe('Feito com Rendra')
   })
 
+  it('exporta o tipo InputTrailingAction (a conferência é a compilação)', () => {
+    const acao: pacote.InputTrailingAction = { icon: null, accessibilityLabel: 'Filtros', onPress: () => {}, badge: 1 }
+    expect(acao.badge).toBe(1)
+  })
+
   it('exporta os componentes da F3 da entrada principal (Timeline, Calendar, Kanban)', () => {
     expect(typeof pacote.Timeline).toBe('function')
     expect(typeof pacote.Calendar).toBe('function')

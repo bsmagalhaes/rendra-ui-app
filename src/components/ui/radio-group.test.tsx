@@ -3,6 +3,7 @@ import { render, fireEvent } from '@testing-library/react-native'
 import { BrandProvider } from '../../brand/brand-provider'
 import { RadioGroup } from './radio-group'
 import { nodesWithCode } from '../../test-utils/rendra-code'
+import { bordasSemCor, classesDo } from '../../test-utils/bordas'
 
 const options = [
   { value: 'mensal', label: 'Mensal' },
@@ -107,5 +108,22 @@ describe('RadioGroup: data-rendra por variante (item D12 do levantamento da Sinc
       </BrandProvider>,
     )
     expect(nodesWithCode(container, 'RDO-002')).toHaveLength(1)
+  })
+})
+
+
+describe('RadioGroup: borda com a cor do token', () => {
+  it('a opção desmarcada usa border-border e a marcada mantém border-primary (sem border-border)', async () => {
+    const { container, findAllByRole } = await render(
+      <BrandProvider>
+        <RadioGroup variant="cards" options={options} value="mensal" onChange={() => {}} />
+      </BrandProvider>,
+    )
+    const radios = await findAllByRole('radio')
+    expect(classesDo(radios[0])).toContain('border-primary')
+    expect(classesDo(radios[0])).not.toContain('border-border')
+    expect(classesDo(radios[1])).toContain('border-border')
+    expect(classesDo(radios[1])).not.toContain('border-primary')
+    expect(bordasSemCor(container)).toEqual([])
   })
 })

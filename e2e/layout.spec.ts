@@ -427,18 +427,36 @@ test('/tarefas: título legível e data sem quebra no meio com a lista reordená
   const alcas = page.getByRole('button', { name: /^Reordenar / })
   expect(await alcas.count()).toBeGreaterThan(5)
   const titulos = await alcas.evaluateAll((nos) => nos.map((no) => (no.getAttribute('aria-label') ?? '').replace('Reordenar ', '')))
-  const largura = page.viewportSize()!.width
   for (const titulo of titulos) {
     const el = page.getByText(titulo, { exact: true })
     const caixa = (await el.boundingBox())!
     const info = await el.evaluate((no) => {
       const estilo = getComputedStyle(no)
-      return { corte: no.scrollHeight > no.clientHeight + 1, linha: parseFloat(estilo.lineHeight) }
+      // A lista fica dentro de um cartão: a largura útil do título é a do conteúdo do cartão, medida
+      // na página (bordas e recuos de cada ancestral até o cartão), não a da janela menos a página.
+      let recuo = 0
+      let cartao: HTMLElement | null = no.parentElement
+      while (cartao && cartao.getAttribute('data-rendra') !== 'CARD-001') {
+        const e = getComputedStyle(cartao)
+        recuo += parseFloat(e.paddingLeft) + parseFloat(e.paddingRight) + parseFloat(e.borderLeftWidth) + parseFloat(e.borderRightWidth)
+        cartao = cartao.parentElement
+      }
+      const ec = cartao ? getComputedStyle(cartao) : null
+      const larguraDoCartao = cartao ? cartao.getBoundingClientRect().width : 0
+      const bordas = ec ? parseFloat(ec.borderLeftWidth) + parseFloat(ec.borderRightWidth) : 0
+      return {
+        corte: no.scrollHeight > no.clientHeight + 1,
+        linha: parseFloat(estilo.lineHeight),
+        noCartao: cartao !== null,
+        util: larguraDoCartao - bordas - recuo,
+      }
     })
     expect(info.corte, `${titulo}: texto cortado`).toBe(false)
     expect(caixa.height, `${titulo}: no máximo duas linhas`).toBeLessThanOrEqual(info.linha * 2 + 1)
-    // Largura inteira da linha: o título não divide a linha com a alça nem com o menu.
-    expect(caixa.width, `${titulo}: largura`).toBeGreaterThanOrEqual(largura - 32 - 24)
+    // Largura inteira da linha: o título não divide a linha com a alça nem com o menu. A largura útil é
+    // a do conteúdo do cartão (medida acima), menos os 24 px de folga do critério original.
+    expect(info.noCartao, `${titulo}: a lista fica dentro de um cartão`).toBe(true)
+    expect(caixa.width, `${titulo}: largura`).toBeGreaterThanOrEqual(info.util - 24)
   }
   const datas = page.getByText(/^\d{2}\/\d{2}\/\d{4}$/)
   const total = await datas.count()

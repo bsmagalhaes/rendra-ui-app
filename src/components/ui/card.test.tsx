@@ -3,6 +3,7 @@ import { View } from 'react-native'
 import { BrandProvider } from '../../brand/brand-provider'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './card'
 import { nodesWithCode } from '../../test-utils/rendra-code'
+import { bordasSemCor, classesDo } from '../../test-utils/bordas'
 
 describe('Card', () => {
   it('CardContent logo após CardHeader não tem padding superior', async () => {
@@ -87,5 +88,27 @@ describe('Card', () => {
       </BrandProvider>,
     )
     expect(nodesWithCode(container, 'CARD-001')).toHaveLength(1)
+  })
+})
+
+
+describe('Card: borda com a cor do token', () => {
+  // Largura de borda sem cor sai preta no web e no nativo; o `Card` (e por ele o `StatCard` e o
+  // `FormSection`) e o `CardFooter` precisam de `border-border` no mesmo literal.
+  it('Card e CardFooter trazem border-border e nenhuma borda sem cor', async () => {
+    const { container } = await render(
+      <BrandProvider>
+        <Card>
+          <CardFooter testID="rodape">
+            <View />
+          </CardFooter>
+        </Card>
+      </BrandProvider>,
+    )
+    const [cartao] = nodesWithCode(container, 'CARD-001')
+    expect(classesDo(cartao)).toEqual(expect.arrayContaining(['border', 'border-border']))
+    const [rodape] = container.queryAll((no) => no.props.testID === 'rodape')
+    expect(classesDo(rodape)).toEqual(expect.arrayContaining(['border-t', 'border-border']))
+    expect(bordasSemCor(container)).toEqual([])
   })
 })

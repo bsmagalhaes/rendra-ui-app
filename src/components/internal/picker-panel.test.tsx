@@ -1,6 +1,7 @@
 import { render, fireEvent, waitFor } from '@testing-library/react-native'
 import { Text as RNText } from 'react-native'
 import { PickerPanel } from './picker-panel'
+import { bordasSemCor } from '../../test-utils/bordas'
 import { Text } from './text'
 import { BrandProvider } from '../../brand/brand-provider'
 
@@ -77,5 +78,27 @@ describe('PickerPanel', () => {
       </BrandProvider>,
     )
     expect(queryByTestId('bottom-sheet-rolagem')).toBeNull()
+  })
+})
+
+
+describe('PickerPanel: borda com a cor do token', () => {
+  it('cabeçalho extra e rodapé usam border-border (não pretos)', async () => {
+    const { container } = await render(
+      <BrandProvider>
+        <PickerPanel
+          open
+          onOpenChange={() => {}}
+          title="Selecione"
+          trigger={<Text className="text-foreground">Abrir</Text>}
+          header={<Text className="text-foreground">Busca</Text>}
+          footer={<Text className="text-foreground">Aplicar</Text>}
+        >
+          <Text className="text-popover-foreground">Item</Text>
+        </PickerPanel>
+      </BrandProvider>,
+    )
+    expect(bordasSemCor(container)).toEqual([])
+    expect(container.queryAll((no) => String(no.props.className ?? '').split(' ').includes('border-border'))).toHaveLength(3)
   })
 })

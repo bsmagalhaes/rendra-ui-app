@@ -32,13 +32,13 @@ suite('contagem de componentes da F3 (49 da F2 mais Chart, Timeline, Calendar, K
     ['AGENTS.md', agents],
     ['CLAUDE.md', claude],
     ['DESIGN_RULES.md', designRules],
-  ])('%s conta 64 componentes e nenhum "49 componentes"', (_nome, texto) => {
-    expect(texto).toMatch(/64 componentes/)
+  ])('%s conta 65 componentes e nenhum "49 componentes"', (_nome, texto) => {
+    expect(texto).toMatch(/65 componentes/)
     expect(texto).not.toMatch(/\b49 componentes/)
   })
 
-  it('a página de apresentação conta 64 componentes e nenhum "49 componentes" (P4)', () => {
-    expect(pagina).toMatch(/64 componentes/)
+  it('a página de apresentação conta 65 componentes e nenhum "49 componentes" (P4)', () => {
+    expect(pagina).toMatch(/65 componentes/)
     expect(pagina).not.toMatch(/49 componentes/)
   })
 
@@ -125,13 +125,6 @@ suite('CHANGELOG 1.1.0 fechado', () => {
 
 suite('CHANGELOG 1.4.0 fechado (List.onReorder)', () => {
   const versao = entrada('1.4.0', '1.3.0')
-  it('a versão gravada é a 1.4.0 nos dois manifestos', () => {
-    const pacote = JSON.parse(ler('package.json')) as { version: string }
-    const app = JSON.parse(ler('app.json')) as { expo: { version: string } }
-    expect(pacote.version).toBe('1.4.0')
-    expect(app.expo.version).toBe('1.4.0')
-  })
-
   it('descreve a List reordenável e o que não foi provado', () => {
     for (const item of ['List.onReorder', 'itemLabel', 'LIST-002', 'Mover', 'moveUp', 'aria-live', 'scrollEnabled', 'iOS']) {
       expect(versao).toContain(item)
@@ -149,6 +142,79 @@ suite('CHANGELOG 1.4.0 fechado (List.onReorder)', () => {
 
   it('não cita o processo interno', () => {
     expect(versao).not.toMatch(/processo\/|docs\/superpowers/)
+  })
+})
+
+suite('CHANGELOG 1.5.0 (ajustes de UI do app)', () => {
+  const versao = entrada('1.5.0', '1.4.0')
+  it('a versão gravada é a 1.5.0 nos dois manifestos', () => {
+    const pacote = JSON.parse(ler('package.json')) as { version: string }
+    const app = JSON.parse(ler('app.json')) as { expo: { version: string } }
+    expect(pacote.version).toBe('1.5.0')
+    expect(app.expo.version).toBe('1.5.0')
+  })
+
+  it('a entrada abre com a data e fica acima da 1.4.0', () => {
+    expect(changelog.indexOf('## [1.5.0] - 05/10/2026')).toBeGreaterThan(-1)
+    expect(changelog.indexOf('## [1.5.0]')).toBeLessThan(changelog.indexOf('## [1.4.0]'))
+  })
+
+  it('diz o efeito visual para quem já usa o pacote: bordas e ícone do Button', () => {
+    expect(versao).toMatch(/bordas e divisores passam de pretos para a cor do token nos 13 pontos/)
+    expect(versao).toMatch(/ícone do `Button` sai de cima do texto e fica ao lado/)
+  })
+
+  it('lista o que é aditivo: Tabs, Input, Sheet e o gerador de imagens', () => {
+    for (const item of ['overflow="scroll"', 'countLabel', 'trailingAction', 'Sheet', 'FOL-001', 'PNG']) {
+      expect(versao).toContain(item)
+    }
+  })
+
+  it('põe os cartões em Alterado (telas de exemplo), não em Corrigido', () => {
+    const corrigido = versao.slice(versao.indexOf('### Corrigido'), versao.indexOf('### Alterado'))
+    const alterado = versao.slice(versao.indexOf('### Alterado'))
+    expect(corrigido).not.toMatch(/cartões/)
+    expect(alterado).toMatch(/cartões/)
+  })
+
+  it('registra as divergências com o web e o que não foi provado', () => {
+    expect(versao).toMatch(/web/)
+    expect(versao).toMatch(/só do app/)
+    expect(versao).toMatch(/Não provado/)
+  })
+
+  it('registra a simulação dos leigos aprovada em 05/10/2026', () => {
+    expect(versao).toMatch(/Simulação dos dois leigos aprovada em 05\/10\/2026/)
+  })
+
+  it('o JSDoc da Sheet avisa do pano de fundo que também fecha e documenta os testID de teste', () => {
+    const jsdoc = ler('src/components/ui/sheet.tsx')
+    expect(jsdoc).toContain('pano de fundo')
+    expect(jsdoc).toContain('${testID}-fechar')
+    expect(jsdoc).toContain('${testID}-overlay')
+  })
+
+  it('registra a List com título em até 2 linhas, o gerador que grava o vencedor e o período ancorado', () => {
+    expect(versao).toMatch(/`List` com `leading` ou `trailing`.*até 2 linhas.*todo chamador/)
+    expect(versao).toMatch(/grava o vencedor e reescreve as referências/)
+    expect(versao).not.toMatch(/o script para antes de gravar/)
+    expect(versao).toMatch(/período.*ancora.*conversa mais recente/)
+  })
+
+  it('descreve os candidatos do gerador e a og-image em JPG', () => {
+    expect(versao).toMatch(/WebP sem perda, WebP com perda, PNG sem perda.*JPG/)
+    expect(versao).toContain('og-image.jpg')
+    expect(versao).toMatch(/PNG sem perda e JPG/)
+  })
+
+  it('o DESIGN_RULES conta as 58 entradas de vitrine', () => {
+    expect(designRules).toContain('58 entradas')
+    expect(designRules).not.toMatch(/57 entradas/)
+  })
+
+  it('não cita o processo interno nem promete que não haverá versão paga', () => {
+    expect(versao).not.toMatch(/processo\/|docs\/superpowers/)
+    expect(versao).not.toMatch(/versão paga/i)
   })
 })
 

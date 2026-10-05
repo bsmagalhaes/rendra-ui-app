@@ -28,7 +28,7 @@ function readPackageHomepage(): string | undefined {
 function main(): void {
   const distDir = join(process.cwd(), 'dist')
   const url = siteUrlFrom(readAppJsonBaseUrl(), process.env.SITE_URL, readPackageHomepage())
-  const ogImageUrl = `${url}og-image.png`
+  const ogImageUrl = `${url}og-image.jpg`
 
   // Canonical e sitemap usam a mesma URL: rota que é pasta termina em barra (no Pages, sem ela é 301).
   const rotas = routeSeo.map((r) => ({ ...r, directory: isDirectoryRoute(distDir, r.path, existsSync) }))

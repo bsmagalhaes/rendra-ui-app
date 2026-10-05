@@ -81,7 +81,7 @@ function AccordionRow({
     : {}
 
   return (
-    <View className={cn('border-b', isLast && 'border-b-0')}>
+    <View className={cn('border-b border-border', isLast && 'border-b-0')}>
       <Pressable
         accessibilityRole={a11yPresets.button.accessibilityRole}
         accessibilityState={{ expanded, disabled: item.disabled }}
