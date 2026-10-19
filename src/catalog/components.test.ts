@@ -1,5 +1,6 @@
 import {
   CATALOG,
+  CATALOG_EXCLUDED_FILES,
   type ComponentCatalogEntry,
   assertCatalogIntegrity,
   catalogByComponent,
@@ -85,7 +86,7 @@ const ARQUIVOS_REAIS_DE_COMPONENTE = [
 ]
 
 // Codigos que existem so no app: o web nao tem folha inferior (la o painel que sobe e o Drawer).
-const CODIGOS_SO_DO_APP = ['FOL-001']
+const CODIGOS_SO_DO_APP = ['FOL-001', 'TEXT-001', 'LINK-001', 'AUTH-001']
 
 // Tabela literal copiada do Apendice A do veredito do Opus (46 entradas do Bloco 1, sem
 // SPIN-001; SPIN-001 entra na Tarefa 8.1, achado C2; LIST-002 entra com o `onReorder` na 1.4.0), para provar paridade
@@ -175,6 +176,16 @@ describe('catalogo de componentes', () => {
 
   it('nenhum arquivo real de src/components/ui fica sem entrada', () => {
     expect(filesMissingCatalogEntry(ARQUIVOS_REAIS_DE_COMPONENTE, CATALOG)).toEqual([])
+  })
+
+  it('Text, TextLink e AuthScreen (publicos na 1.6.0) têm entrada com o código próprio, e text.tsx deixou a lista de exclusão', () => {
+    expect(CATALOG_EXCLUDED_FILES).not.toContain('components/internal/text.tsx')
+    expect(filesMissingCatalogEntry(['components/internal/text.tsx', 'components/layout/auth-screen.tsx'], CATALOG)).toEqual([])
+    expect(resolveCatalogCode('Text')).toBe('TEXT-001')
+    expect(resolveCatalogCode('TextLink')).toBe('LINK-001')
+    expect(resolveCatalogCode('AuthScreen')).toBe('AUTH-001')
+    // TXT-001 é o Textarea nos dois produtos: o Text não pode reaproveitar a sigla.
+    expect(getCatalogEntry('TXT-001')?.component).toBe('Textarea')
   })
 
   it('nenhum codigo colide com [TCMN]\\d+ dos presets de modelo (o web para em [TCM]; o app ganha N)', () => {
@@ -280,10 +291,10 @@ describe('catalogo de componentes', () => {
     expect(CATALOG.filter((e) => !CODIGOS_SO_DO_APP.includes(e.code))).toHaveLength(75)
   })
 
-  it('codigos so do app (sem par no web): FOL-001, a folha inferior da 1.5.0; o catalogo inteiro tem 76 entradas', () => {
-    expect(CODIGOS_SO_DO_APP).toEqual(['FOL-001'])
+  it('codigos so do app (sem par no web): FOL-001 (a folha inferior da 1.5.0), TEXT-001, LINK-001 e AUTH-001 (Text, TextLink e AuthScreen, publicos na 1.6.0); o catalogo inteiro tem 79 entradas', () => {
+    expect(CODIGOS_SO_DO_APP).toEqual(['FOL-001', 'TEXT-001', 'LINK-001', 'AUTH-001'])
     for (const code of CODIGOS_SO_DO_APP) expect(getCatalogEntry(code)).toBeDefined()
-    expect(CATALOG).toHaveLength(76)
+    expect(CATALOG).toHaveLength(79)
   })
 
   it.each(TABELA_PARIDADE)('%s (%s) casa code/component/variantProps/isDefault', (code, component, variantProps, isDefault) => {

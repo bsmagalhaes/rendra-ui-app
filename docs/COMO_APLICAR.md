@@ -25,6 +25,26 @@ O pacote e o Tailwind vêm pelo `npm install` comum (fixando `tailwindcss@3`: a 
 
 Componentes como `Button` usam `react-native-reanimated` (`useAnimatedStyle`), que exige o plugin `react-native-worklets/plugin` no Babel para funcionar. Em app Expo, o `babel-preset-expo` já inclui esse plugin sozinho (nenhum passo extra, `expo-status-bar` acima é peer obrigatório, não opcional). Em bare React Native sem `babel-preset-expo`, acrescente `react-native-worklets/plugin` aos `plugins` do `babel.config.js` à mão; sem ele, os componentes animados quebram no primeiro toque.
 
+Testes do app que consome o pacote (Jest): o `dist-lib` já vem compilado pelo `tsc` e nunca passa pelo Babel, então, sob Jest, o `useAnimatedStyle` roda sem a lista de dependências e dá o erro "useAnimatedStyle was used without a dependency array". A saída é deixar o `transformIgnorePatterns` do preset do seu `jest.config.js` aceitar `@rendra-ui/.*`: some `|@rendra-ui/.*` ao fim do grupo do primeiro padrão, assim.
+
+```js
+// jest.config.js do app
+transformIgnorePatterns: [
+  'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|react-navigation|@react-navigation/.*|react-native-svg|nativewind|react-native-css-interop|lucide-react-native|@rendra-ui/.*)',
+],
+```
+
+O Metro não precisa disso: o app em execução transforma todo módulo pelo `babel-preset-expo`. Só o Jest pula `node_modules`.
+
+Se o seu `jest.config.js` não mapeia o `lucide-react-native`, acrescente também o `moduleNameMapper` abaixo. Sob Jest, o `import { icons } from 'lucide-react-native'` resolve para o `.mjs` do pacote, que o transform do `jest-expo` não cobre, e o teste cai em `SyntaxError: Unexpected token 'export'`. O mapeamento aponta para a build CJS, que expõe o mesmo `icons`.
+
+```js
+// jest.config.js do app
+moduleNameMapper: {
+  '^lucide-react-native$': '<rootDir>/node_modules/lucide-react-native/dist/cjs/lucide-react-native.js',
+},
+```
+
 ## Navegação do app: `AppShell`
 
 O `AppShell` entrega cabeçalho (título da tela, seta de voltar, menu do usuário), barra inferior de navegação rápida com botão central de menu e o menu em gaveta lateral ou folha inferior. Só `navigation` é obrigatório; ele nunca importa o roteador, usa `useRendraNavigation()` (o `RendraRouterBridge` ou o seu `RendraNavigationProvider`). Com Expo Router, ponha as telas que usam o shell num grupo de rotas (por exemplo `app/(shell)/`) e monte o `AppShell` no layout do grupo:
@@ -47,6 +67,12 @@ export default function ShellLayout() {
 ```
 
 `bottomNav: true` põe o item na barra inferior (até 4). O layout vem do código de modelo, terceira parte `N1` a `N3` (`N1` barra inferior com menu em gaveta, `N2` barra inferior com menu em folha, `N3` só gaveta): por `?codigo=T#-C#-N#`, por `useShell().applyLayout('N2')` ou pela tela de configurações de exemplo; a escolha fica gravada no aparelho (`userConfigurable={false}` desliga). Dentro do shell, `PageHeader` e `ActionBar` se ajustam sozinhos (o título vai para o cabeçalho e os insets não se somam). Telas públicas (login, erro 404) ficam fora do grupo, em tela cheia, cada uma com o próprio `SafeAreaView`. O menu e o usuário de exemplo da vitrine (`src/config/navigation.tsx`) não fazem parte do pacote: escreva o seu.
+
+Props opcionais do `AppShell` (todas com o padrão de sempre quando ausentes):
+
+- `centerButton`: `{ icon?: 'brand-symbol' | ícone; accessibilityLabel?: string }`, o ícone e o rótulo do botão redondo do centro da barra inferior. `'brand-symbol'` desenha o símbolo da marca (`BrandConfig.symbol`; sem ele, fica o ícone de menu). O botão de menu do cabeçalho, sem barra inferior, não muda.
+- `workspaces`: `{ items: { id, label }[]; activeId; onSelect(id); label? }`, o seletor de espaço (empresa, filial) no topo do menu do usuário, com o ativo marcado. Só aparece quando há `user`.
+- `headerLogo`: um elemento (por exemplo, `<BrandLogo />`) no lugar do título no cabeçalho. O título continua lá só para o leitor de tela e o logo é decorativo para ele; a ajuda segue ao lado. Passe um elemento estável (declarado fora do componente ou memoizado). Para ter o título também no corpo da tela, use `<PageHeader bodyTitle />`.
 
 ## Crédito "Feito com Rendra"
 
@@ -107,6 +133,12 @@ function TrocarMarca() {
 
 `useBrand().setModelAndPalette(codigo, paletteId)` troca os dois numa escrita só, quando as duas mudanças acontecem juntas (evita duas re-renderizações). Toda troca persiste localmente (`AsyncStorage`) e reflete imediatamente em `themeVars` (a mesma saída que alimenta `vars()` na `View` raiz do `BrandProvider`), sem recarregar o app.
 
+O `BrandProvider` aceita ainda quatro props opcionais, todas com o padrão de sempre quando ausentes:
+
+- `defaultModelCode` (um modelo, como `'T2'`; não é a constante exportada `defaultModelCode`, que é o código completo `'T1-C1-N1'`) e `defaultPaletteId` (como `'aurora'`): valem já na primeira pintura e quando nada está salvo. Uma escolha salva no armazenamento vence depois de hidratar. Um `defaultPaletteId` que não está na lista cai na primeira paleta dela.
+- `palettes` (lista de `PaletteSeeds`): substitui as quatro paletas prontas, em vez de somar. O código da paleta própria é o `id` em maiúsculas. Se a paleta salva não está na lista, o registro salvo inteiro é descartado: modelo, paleta e modo voltam aos padrões (`defaultModelCode`, `defaultPaletteId` e `'system'`). Passe uma lista estável, declarada fora do componente.
+- `storage={false}`: desliga a persistência (nada é lido nem gravado no `AsyncStorage`, e o provider já nasce hidratado).
+
 ## 4. Nome do produto
 
 `BrandConfig.productName` (`src/brand/types.ts`), junto de `companyName` e `tagline`. Cada marca configurada em `src/brand/brand.config.ts` tem seu próprio `BrandConfig`.
@@ -114,6 +146,8 @@ function TrocarMarca() {
 ## 5. Logotipo
 
 `BrandConfig.symbol` (selo/símbolo) e `BrandConfig.logo` (`{ light, dark }`, logotipo completo) são campos opcionais: nenhuma arte própria é obrigatória, e o `BrandLogo` (`src/components/ui/brand-logo.tsx`) já usa um símbolo genérico interno quando `symbol` não existe. Quem for aplicar a marca pode deixar os dois campos vazios; o `BrandProvider` funciona normalmente sem eles (cor, fonte e raio já trocam de ponta a ponta pelas etapas 1-3 acima).
+
+Com `BrandConfig.logoMode: 'image'` e `BrandConfig.logo` definido, o `BrandLogo` desenha a arte oficial (a `light` no modo claro, a `dark` no escuro e sobre o degradê, e a variante da paleta sobre a sidebar), com 32 px de altura e 96 px de largura, preservando a proporção; sem `logo`, ou com `symbolOnly`, continua o desenho atual. No `AuthLayout`, `headerBackground="none"` tira o degradê do painel de marca (o logotipo oficial vai sobre a superfície); `align="center"` centraliza, `gap` (`'fields'` ou `'section'`) troca o espaço entre os blocos e `onBack` ou `backHref` põem um botão só com ícone ("Voltar") ao lado do logotipo.
 
 ## Verificação via seletor real ou por URL
 

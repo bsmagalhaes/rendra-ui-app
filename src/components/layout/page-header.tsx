@@ -12,6 +12,22 @@ import { a11yPresets } from '../../lib/a11y'
 export interface PageHeaderProps extends ViewProps {
   title: ReactNode
   showTitle?: boolean
+  /**
+   * Dentro do `AppShell`, mostra também o título (discreto, `text-base`) no topo do corpo, para
+   * quando o cabeçalho do shell o esconde (por exemplo com `headerLogo`). O título continua
+   * subindo ao cabeçalho. Padrão `false`. Fora do shell não tem efeito: o título já é o do corpo.
+   */
+  bodyTitle?: boolean
+  /** `'start'` (padrão) ou `'center'`: centraliza título e descrição. */
+  align?: 'start' | 'center'
+  /**
+   * Fora do shell, soma o inset superior da área segura ao topo (padrão `true`). Com `false`,
+   * o topo fica sem esse respiro, para quem já o reserva por fora. Dentro do shell o cabeçalho
+   * dele é o dono do inset e esta prop não muda nada.
+   *
+   * A margem negativa de baixo (`-mb-2`) não tem prop: passe `className="mb-0"`, que vence.
+   */
+  inset?: boolean
   description?: ReactNode
   help?: ReactNode
   actions?: ReactNode
@@ -25,6 +41,9 @@ const visuallyHiddenClassName = 'absolute h-px w-px overflow-hidden'
 export function PageHeader({
   title,
   showTitle = false,
+  bodyTitle = false,
+  align = 'start',
+  inset = true,
   description,
   help,
   actions,
@@ -69,29 +88,41 @@ export function PageHeader({
       <InfoHint title={typeof title === 'string' ? title : 'Sobre esta tela'}>{help}</InfoHint>
     ) : null
   // No shell o título visível é o do cabeçalho; aqui fica só o título semântico, oculto.
-  const titleVisible = !shell && (showTitle || Boolean(inlineHelp))
+  // Com `bodyTitle`, dentro do shell, o título também aparece no corpo, discreto.
+  const shellBodyTitle = Boolean(shell) && bodyTitle
+  const titleVisible = (!shell && (showTitle || Boolean(inlineHelp))) || shellBodyTitle
   const visible =
-    (!shell && showTitle) || Boolean(description) || Boolean(actions) || Boolean(children) || Boolean(inlineHelp)
+    (!shell && showTitle) ||
+    shellBodyTitle ||
+    Boolean(description) ||
+    Boolean(actions) ||
+    Boolean(children) ||
+    Boolean(inlineHelp)
+  const centered = align === 'center'
 
   return (
     <View
       className={cn('-mb-2 flex-col gap-4', !visible && visuallyHiddenClassName, className)}
-      style={{ paddingTop: shell ? 0 : Math.max(0, insets.top) }}
+      style={{ paddingTop: shell || !inset ? 0 : Math.max(0, insets.top) }}
       {...rest}
     >
       <View className="flex-col gap-4">
-        <View className="flex-col gap-1">
-          <View className="flex-row min-w-0 items-center gap-1">
+        <View className={cn('flex-col gap-1', centered && 'items-center')}>
+          <View className={cn('flex-row min-w-0 items-center gap-1', centered && 'justify-center')}>
             <Text
               weight="semibold"
               accessibilityRole={a11yPresets.header.accessibilityRole}
-              className={titleVisible ? 'text-2xl text-foreground' : visuallyHiddenClassName}
+              className={
+                titleVisible
+                  ? cn('text-foreground', shellBodyTitle ? 'text-base' : 'text-2xl')
+                  : visuallyHiddenClassName
+              }
             >
               {title}
             </Text>
             {inlineHelp}
           </View>
-          {description && <Text className="text-sm text-muted-foreground">{description}</Text>}
+          {description && <Text className={cn('text-sm text-muted-foreground', centered && 'text-center')}>{description}</Text>}
         </View>
         {actions && (
           <View className="w-full flex-row gap-3">

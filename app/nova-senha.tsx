@@ -7,7 +7,7 @@ import { Text } from '../src/components/internal/text'
 import { useBrand } from '../src/brand'
 import { ActionBar, Form, FormField, Input, Progress, toast } from '../src/components/ui'
 import type { ProgressTone } from '../src/components/ui/progress'
-import { AuthScreen } from '../src/demo/auth-screen'
+import { AuthScreen } from '../src/components/layout'
 import { passwordStrength, type NivelSenha } from '../src/demo/password-strength'
 import { useDocumentTitle } from '../src/lib/use-document-title'
 

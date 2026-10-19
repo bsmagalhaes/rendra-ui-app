@@ -32,13 +32,13 @@ suite('contagem de componentes da F3 (49 da F2 mais Chart, Timeline, Calendar, K
     ['AGENTS.md', agents],
     ['CLAUDE.md', claude],
     ['DESIGN_RULES.md', designRules],
-  ])('%s conta 65 componentes e nenhum "49 componentes"', (_nome, texto) => {
-    expect(texto).toMatch(/65 componentes/)
+  ])('%s conta 68 componentes e nenhum "49 componentes"', (_nome, texto) => {
+    expect(texto).toMatch(/68 componentes/)
     expect(texto).not.toMatch(/\b49 componentes/)
   })
 
-  it('a página de apresentação conta 65 componentes e nenhum "49 componentes" (P4)', () => {
-    expect(pagina).toMatch(/65 componentes/)
+  it('a página de apresentação conta 68 componentes e nenhum "49 componentes" (P4)', () => {
+    expect(pagina).toMatch(/68 componentes/)
     expect(pagina).not.toMatch(/49 componentes/)
   })
 
@@ -147,13 +147,6 @@ suite('CHANGELOG 1.4.0 fechado (List.onReorder)', () => {
 
 suite('CHANGELOG 1.5.0 (ajustes de UI do app)', () => {
   const versao = entrada('1.5.0', '1.4.0')
-  it('a versão gravada é a 1.5.0 nos dois manifestos', () => {
-    const pacote = JSON.parse(ler('package.json')) as { version: string }
-    const app = JSON.parse(ler('app.json')) as { expo: { version: string } }
-    expect(pacote.version).toBe('1.5.0')
-    expect(app.expo.version).toBe('1.5.0')
-  })
-
   it('a entrada abre com a data e fica acima da 1.4.0', () => {
     expect(changelog.indexOf('## [1.5.0] - 05/10/2026')).toBeGreaterThan(-1)
     expect(changelog.indexOf('## [1.5.0]')).toBeLessThan(changelog.indexOf('## [1.4.0]'))
@@ -282,5 +275,58 @@ suite('CHANGELOG 1.2.0 fechado (F3)', () => {
   it('registra a simulação dos leigos aprovada para esta versão', () => {
     expect(versao).toContain('Simulação dos dois leigos aprovada em 02/10/2026')
     expect(versao).not.toMatch(/Simulação dos dois leigos: pendente/)
+  })
+})
+
+suite('guia de teste de quem consome o pacote (item 32, 1.6.0)', () => {
+  it.each([
+    ['README.md', readme],
+    ['docs/COMO_APLICAR.md', comoAplicar],
+    ['docs/PROMPT_MIGRACAO.md', promptMigracao],
+  ])('%s diz que, sob Jest, o transformIgnorePatterns do app precisa deixar @rendra-ui/ passar pelo Babel', (_nome, texto) => {
+    expect(texto).toContain('transformIgnorePatterns')
+    expect(texto).toContain('@rendra-ui/')
+    expect(texto).toContain('useAnimatedStyle')
+  })
+
+  it.each([
+    ['README.md', readme],
+    ['docs/COMO_APLICAR.md', comoAplicar],
+  ])('%s traz o exemplo literal do padrão (|@rendra-ui/.*) e diz que o Metro não precisa disso', (_nome, texto) => {
+    expect(texto).toContain('|@rendra-ui/.*')
+    expect(texto).toMatch(/Metro n[ãa]o precisa/)
+  })
+  it.each([
+    ['README.md', readme],
+    ['docs/COMO_APLICAR.md', comoAplicar],
+  ])('%s traz o moduleNameMapper do lucide-react-native (build CJS), sem o qual o .mjs quebra o Jest', (_nome, texto) => {
+    expect(texto).toContain('moduleNameMapper')
+    expect(texto).toContain("'^lucide-react-native$'")
+    expect(texto).toContain('lucide-react-native/dist/cjs/lucide-react-native.js')
+    expect(texto).toContain("Unexpected token 'export'")
+  })
+})
+
+suite('CHANGELOG 1.6.0 (melhorias do uso em outros projetos)', () => {
+  const versao = entrada('1.6.0', '1.5.0')
+  it('a versão gravada é a 1.6.0 nos dois manifestos', () => {
+    const pacote = JSON.parse(ler('package.json')) as { version: string }
+    const app = JSON.parse(ler('app.json')) as { expo: { version: string } }
+    expect(pacote.version).toBe('1.6.0')
+    expect(app.expo.version).toBe('1.6.0')
+  })
+
+  it('a entrada abre com a data, fica acima da 1.5.0 e a seção Não lançado fica vazia acima dela', () => {
+    expect(changelog.indexOf('## [1.6.0] - 19/10/2026')).toBeGreaterThan(-1)
+    expect(changelog.indexOf('## [1.6.0]')).toBeLessThan(changelog.indexOf('## [1.5.0]'))
+    expect(changelog.indexOf('## [Não lançado]')).toBeLessThan(changelog.indexOf('## [1.6.0]'))
+  })
+
+  it('registra a simulação dos leigos aprovada para esta versão', () => {
+    expect(versao).toMatch(/Simulação dos dois leigos aprovada em 19\/10\/2026/)
+  })
+
+  it('não cita o processo interno', () => {
+    expect(versao).not.toMatch(/processo\/|docs\/superpowers/)
   })
 })

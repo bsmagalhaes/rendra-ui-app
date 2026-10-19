@@ -1,5 +1,5 @@
 import * as pacote from './index'
-import type { ShellNotificationItem, ShellNotificationsConfig } from './index'
+import type { ShellWorkspaces, ShellCenterButton, ShellNotificationItem, ShellNotificationsConfig } from './index'
 
 describe('src/index.ts, entrada principal do pacote', () => {
   it('exporta os componentes de UI e o BrandProvider, funcoes de verdade', () => {
@@ -22,6 +22,19 @@ describe('src/index.ts, entrada principal do pacote', () => {
     expect(typeof pacote.RendraSplash).toBe('function')
     expect((pacote as Record<string, unknown>).splashSeloStyle).toBeUndefined()
     expect(pacote.RENDRA_CREDIT_TEXT).toBe('Feito com Rendra')
+  })
+
+  it('exporta AuthScreen, TextLink e Text (os três viraram públicos na 1.6.0), com seus tipos', () => {
+    expect(typeof pacote.AuthScreen).toBe('function')
+    expect(typeof pacote.TextLink).toBe('function')
+    expect(typeof pacote.Text).toBe('function')
+    // Tipos: a conferência é a compilação (`npm run typecheck`).
+    const tela: pacote.AuthScreenProps = { title: 'Entrar', children: null }
+    const link: pacote.TextLinkProps = { href: '/login', children: 'Entrar', align: 'end' }
+    const texto: pacote.TextProps = { weight: 'semibold' }
+    expect(tela.title).toBe('Entrar')
+    expect(link.align).toBe('end')
+    expect(texto.weight).toBe('semibold')
   })
 
   it('exporta o tipo InputTrailingAction (a conferência é a compilação)', () => {
@@ -53,6 +66,16 @@ describe('src/index.ts, entrada principal do pacote', () => {
     const item: ShellNotificationItem = { id: '1', type: 'info', title: 'Fatura paga', time: '29/09/2026', read: false }
     const config: ShellNotificationsConfig = { items: [item], onMarkAllRead: () => {}, onItemClick: () => {} }
     expect(config.items).toHaveLength(1)
+  })
+
+  it('exporta o tipo ShellCenterButton (a conferência é a compilação)', () => {
+    const botao: ShellCenterButton = { icon: 'brand-symbol', accessibilityLabel: 'Atalhos' }
+    expect(botao.accessibilityLabel).toBe('Atalhos')
+  })
+
+  it('exporta o tipo ShellWorkspaces (a conferência é a compilação)', () => {
+    const espacos: ShellWorkspaces = { items: [{ id: 'a', label: 'Matriz' }], activeId: 'a', onSelect: () => {} }
+    expect(espacos.items).toHaveLength(1)
   })
 
   it('exporta o AppShell e a superficie publica de navegacao, sem o menu de exemplo', () => {

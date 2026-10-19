@@ -199,6 +199,9 @@ Demais componentes do catálogo:
 | `SLD-001` | Slider | Para escolher um número ou uma faixa dentro de um intervalo, arrastando. |
 | `STAT-001` | Card de indicador | Para um número de destaque com variação, num painel. |
 | `SWT-001` | Switch | Para ligar ou desligar uma opção com efeito imediato. |
+| `AUTH-001` | Tela de autenticação | Para a tela cheia de login, criar conta, recuperar senha e verificação, com teclado e rolagem tratados. Só existe no app. |
+| `LINK-001` | Link de texto | Para um link curto dentro de um formulário, como "Esqueci a senha" ou "Criar conta". Só existe no app. |
+| `TEXT-001` | Texto | Para qualquer texto que precisa da fonte do modelo de marca, com peso normal, médio ou seminegrito. Só existe no app. |
 | `TXT-001` | Área de texto | Para texto longo, com contador de caracteres opcional. |
 | `TLN-001` | Linha do tempo | Para uma sequência de eventos em ordem, cada um com um tom semântico. |
 | `RTG-001` | Avaliação em estrelas | Para uma nota rápida de satisfação, em estrelas. |

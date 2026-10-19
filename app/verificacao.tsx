@@ -3,7 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Text } from '../src/components/internal/text'
 import { useBrand } from '../src/brand'
 import { ActionBar, Alert, OtpInput, toast } from '../src/components/ui'
-import { AuthScreen } from '../src/demo/auth-screen'
+import { AuthScreen } from '../src/components/layout'
 import { useDocumentTitle } from '../src/lib/use-document-title'
 
 const CODIGO_INVALIDO = '000000'

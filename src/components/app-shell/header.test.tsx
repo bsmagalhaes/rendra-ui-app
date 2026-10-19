@@ -137,3 +137,74 @@ describe('Header do AppShell', () => {
     expect(StyleSheet.flatten(cabecalho.props.style)).toMatchObject({ paddingTop: 24 })
   })
 })
+
+describe('Header: o botão de menu do cabeçalho não segue o centerButton', () => {
+  it('sem barra inferior, "Abrir menu" continua com o rótulo padrão mesmo com centerButton próprio', async () => {
+    const tela = await montar(
+      { currentPath: '/paginas' },
+      { shell: { layout: { bottomNav: false }, centerButton: { accessibilityLabel: 'Atalhos' } } },
+    )
+    await fireEvent.press(await tela.findByRole('button', { name: 'Abrir menu' }))
+    expect((await tela.findByTestId('menu-aberto')).props.children).toBe('true')
+    expect(tela.queryByRole('button', { name: 'Atalhos' })).toBeNull()
+  })
+})
+
+describe('Header: workspaces chega ao menu do usuário', () => {
+  it('o workspaces do shell aparece no menu do avatar, e só quando há usuário', async () => {
+    const onSelect = jest.fn()
+    const workspaces = { items: [{ id: 'a', label: 'Matriz' }, { id: 'b', label: 'Filial Sul' }], activeId: 'b', onSelect }
+    const comUsuario = await montar(
+      { currentPath: '/paginas' },
+      { shell: { user: { name: 'Ana Ribeiro' }, workspaces } },
+    )
+    await fireEvent.press(await comUsuario.findByRole('button', { name: 'Menu de Ana Ribeiro' }))
+    expect((await comUsuario.findByRole('menuitem', { name: 'Filial Sul' })).props.accessibilityState).toMatchObject({ selected: true })
+    await fireEvent.press(await comUsuario.findByRole('menuitem', { name: 'Matriz' }))
+    expect(onSelect).toHaveBeenCalledWith('a')
+    await comUsuario.unmount()
+    // sem usuário não há menu do usuário, logo nem espaços (limitação documentada)
+    const semUsuario = await montar({ currentPath: '/paginas' }, { shell: { workspaces } })
+    await semUsuario.findByText('Páginas')
+    expect(semUsuario.queryByText('Matriz')).toBeNull()
+  })
+})
+
+describe('Header: headerLogo no lugar do título', () => {
+  const classesDe = (no: { props: Record<string, unknown> }) => String(no.props.className ?? '').split(' ')
+  const logo = <Text testID="logo-do-cabecalho">LOGO</Text>
+
+  it('sem headerLogo o título segue visível (text-base) e sem ocultação', async () => {
+    const tela = await montar({ currentPath: '/paginas' })
+    const classes = classesDe(await tela.findByText('Páginas'))
+    expect(classes).toContain('text-base')
+    expect(classes).not.toContain('absolute')
+  })
+
+  it('com headerLogo, o logo aparece e o título fica só para o leitor de tela (oculto visualmente, ainda na árvore)', async () => {
+    const tela = await montar({ currentPath: '/paginas' }, { shell: { headerLogo: logo } })
+    // decorativo: some da árvore de acessibilidade, então só aparece com includeHiddenElements
+    expect(await tela.findByTestId('logo-do-cabecalho', { includeHiddenElements: true })).toBeTruthy()
+    const titulo = await tela.findByText('Páginas')
+    expect(classesDe(titulo)).toEqual(expect.arrayContaining(['absolute', 'h-px', 'w-px', 'overflow-hidden']))
+  })
+
+  it('o logo é decorativo para o leitor de tela (a View que o envolve some da árvore de acessibilidade)', async () => {
+    const tela = await montar({ currentPath: '/paginas' }, { shell: { headerLogo: logo } })
+    const envolucro = (await tela.findByTestId('logo-do-cabecalho', { includeHiddenElements: true })).parent!
+    expect(envolucro.props.accessibilityElementsHidden).toBe(true)
+    expect(envolucro.props.importantForAccessibility).toBe('no-hide-descendants')
+    expect(envolucro.props['aria-hidden']).toBe(true)
+  })
+
+  it('o título enviado pela tela continua sendo o anunciado, e a ajuda (InfoHint) segue ao lado do logo', async () => {
+    const tela = await montar(
+      { currentPath: '/paginas' },
+      { shell: { headerLogo: logo }, extra: <DefinirMeta title="Minha tela" help="Ajuda da tela" /> },
+    )
+    const titulo = await tela.findByText('Minha tela')
+    expect(classesDe(titulo)).toContain('absolute')
+    expect(await tela.findByRole('button', { name: 'Sobre: Minha tela' })).toBeTruthy()
+    expect(await tela.findByTestId('logo-do-cabecalho', { includeHiddenElements: true })).toBeTruthy()
+  })
+})

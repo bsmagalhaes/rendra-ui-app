@@ -1,5 +1,6 @@
 import { Component, useState } from 'react'
 import type { ReactNode } from 'react'
+import { Platform } from 'react-native'
 import { render, fireEvent, act } from '@testing-library/react-native'
 import { BrandProvider } from '../../brand/brand-provider'
 import { Text } from '../internal/text'
@@ -104,5 +105,61 @@ describe('DropdownMenu', () => {
     const trigger = await findByLabelText('Mais ações')
     await fireEvent.press(trigger)
     expect(nodesWithCode(container, 'DDM-001')).toHaveLength(1)
+  })
+})
+
+describe('DropdownMenuItem: selected (B5, sem aria-selected no web)', () => {
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+  function ComItem({ selected }: { selected?: boolean }) {
+    return (
+      <BrandProvider>
+        <DropdownMenu open onOpenChange={() => {}}>
+          <DropdownMenuTrigger>
+            <Button variant="outline" iconOnly accessibilityLabel="Abrir" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent accessibilityLabel="Menu">
+            <DropdownMenuItem selected={selected} onSelect={() => {}}>
+              Espaço A
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </BrandProvider>
+    )
+  }
+  const icones = (item: { queryAll: (f: (no: { type: unknown }) => boolean) => unknown[] }) =>
+    item.queryAll((no) => String(no.type) === 'RNSVGSvgView')
+
+  it('nativo: selected marca accessibilityState.selected e mostra o Check; sem a prop, só disabled', async () => {
+    const marcado = await render(<ComItem selected />)
+    const item = await marcado.findByRole('menuitem', { name: 'Espaço A' })
+    expect(item.props.accessibilityState).toMatchObject({ selected: true, disabled: false })
+    expect(icones(item)).toHaveLength(1)
+    await marcado.unmount()
+    const solto = await render(<ComItem />)
+    const semProp = await solto.findByRole('menuitem', { name: 'Espaço A' })
+    expect(semProp.props.accessibilityState).toEqual({ disabled: false })
+    expect(icones(semProp)).toHaveLength(0)
+  })
+
+  it('selected={false} não marca nem mostra o Check', async () => {
+    const tela = await render(<ComItem selected={false} />)
+    const item = await tela.findByRole('menuitem', { name: 'Espaço A' })
+    expect(item.props.accessibilityState).toMatchObject({ selected: false })
+    expect(icones(item)).toHaveLength(0)
+  })
+
+  it('web: usa aria-current="true" e nunca selected no accessibilityState (aria-selected não vale em menuitem)', async () => {
+    jest.replaceProperty(Platform, 'OS', 'web')
+    const marcado = await render(<ComItem selected />)
+    const item = await marcado.findByRole('menuitem', { name: 'Espaço A' })
+    expect(item.props['aria-current']).toBe('true')
+    expect(item.props.accessibilityState).toEqual({ disabled: false })
+    expect(icones(item)).toHaveLength(1)
+    await marcado.unmount()
+    const desmarcado = await render(<ComItem selected={false} />)
+    const outro = await desmarcado.findByRole('menuitem', { name: 'Espaço A' })
+    expect(outro.props['aria-current']).toBeUndefined()
   })
 })

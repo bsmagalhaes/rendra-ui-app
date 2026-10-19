@@ -13,7 +13,7 @@ import { a11yPresets } from '../src/lib/a11y'
 import { cn } from '../src/lib/cn'
 
 // Uma fonte so para o numero: o cartao e o texto da apresentacao nao podem divergir (eram 49 e 57).
-const totalComponentes = 65
+const totalComponentes = 68
 
 const fatos = [
   { valor: String(totalComponentes), rotulo: 'componentes' },

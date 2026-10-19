@@ -1,6 +1,7 @@
 import { cloneElement, createContext, isValidElement, useContext, useState } from 'react'
 import type { ReactElement, ReactNode } from 'react'
-import { Pressable, View } from 'react-native'
+import { Platform, Pressable, View } from 'react-native'
+import { Check } from 'lucide-react-native'
 import { Text } from '../internal/text'
 import { cn } from '../../lib/cn'
 import { a11yPresets } from '../../lib/a11y'
@@ -71,16 +72,30 @@ export interface DropdownMenuItemProps {
   icon?: ReactNode
   destructive?: boolean
   disabled?: boolean
+  /**
+   * Marca o item como o escolhido (por exemplo, o espaço ativo): mostra um `Check` e, para o leitor
+   * de tela, vai como `aria-current` no web (`aria-selected` não vale em `menuitem`) e como
+   * `accessibilityState.selected` no nativo. Sem a prop, nada muda.
+   */
+  selected?: boolean
   onSelect: () => void
 }
 
-export function DropdownMenuItem({ children, icon, destructive = false, disabled = false, onSelect }: DropdownMenuItemProps) {
+export function DropdownMenuItem({ children, icon, destructive = false, disabled = false, selected, onSelect }: DropdownMenuItemProps) {
   const { setOpen } = useDropdownMenuContext('DropdownMenuItem')
   const [pressed, setPressed] = useState(false)
+  // Mesmo precedente de shell-link.tsx: no web o estado vai como `aria-current` (o react-native-web
+  // converteria `accessibilityState.selected` em `aria-selected`, proibido em `menuitem`); no nativo, em `selected`.
+  const estado =
+    selected === undefined
+      ? { accessibilityState: { disabled } }
+      : Platform.OS === 'web'
+        ? { accessibilityState: { disabled }, 'aria-current': selected ? ('true' as const) : undefined }
+        : { accessibilityState: { disabled, selected } }
   return (
     <Pressable
       accessibilityRole={a11yPresets.menuitem.accessibilityRole}
-      accessibilityState={{ disabled }}
+      {...estado}
       disabled={disabled}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
@@ -113,6 +128,7 @@ export function DropdownMenuItem({ children, icon, destructive = false, disabled
       >
         {children}
       </Text>
+      {selected ? <Check className="ml-auto size-icon-md text-foreground" /> : null}
     </Pressable>
   )
 }

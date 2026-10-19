@@ -10,20 +10,23 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu'
 import { useRendraNavigation } from '../../navigation/rendra-navigation'
-import type { ShellMenuItem, ShellUser } from './types'
+import type { ShellMenuItem, ShellUser, ShellWorkspaces } from './types'
 
 export interface UserMenuProps {
   user: ShellUser
   userMenuItems?: ShellMenuItem[]
   onLogout?: () => void
+  /** Seletor de espaço no topo do menu. */
+  workspaces?: ShellWorkspaces
 }
 
 /**
  * Menu do usuário: o `Avatar` é o gatilho e abre uma folha com nome e e-mail, os itens do app,
  * "Aparência" (leva para `/configuracoes`, onde ficam modo, modelo, paleta e layout: o
- * `DropdownMenu` não tem grupo de opções) e "Sair" (destrutivo), quando há `onLogout`.
+ * `DropdownMenu` não tem grupo de opções) e "Sair" (destrutivo), quando há `onLogout`. Com
+ * `workspaces`, o topo do menu traz o seletor de espaço (rótulo, itens com o ativo marcado e um separador).
  */
-export function UserMenu({ user, userMenuItems, onLogout }: UserMenuProps) {
+export function UserMenu({ user, userMenuItems, onLogout, workspaces }: UserMenuProps) {
   const { navigate } = useRendraNavigation()
 
   return (
@@ -38,6 +41,21 @@ export function UserMenu({ user, userMenuItems, onLogout }: UserMenuProps) {
         </Pressable>
       </DropdownMenuTrigger>
       <DropdownMenuContent accessibilityLabel={`Menu de ${user.name}`}>
+        {workspaces ? (
+          <>
+            <DropdownMenuLabel>{workspaces.label ?? 'Espaço'}</DropdownMenuLabel>
+            {workspaces.items.map((espaco) => (
+              <DropdownMenuItem
+                key={espaco.id}
+                selected={espaco.id === workspaces.activeId}
+                onSelect={() => workspaces.onSelect(espaco.id)}
+              >
+                {espaco.label}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+          </>
+        ) : null}
         <DropdownMenuLabel>{user.name}</DropdownMenuLabel>
         {user.email ? <DropdownMenuLabel>{user.email}</DropdownMenuLabel> : null}
         <DropdownMenuSeparator />

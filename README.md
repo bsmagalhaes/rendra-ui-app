@@ -1,6 +1,6 @@
 # Rendra App
 
-**Design system e boilerplate mobile em React Native (Expo), com Expo Router e NativeWind, para todo app novo em português do Brasil.** Traz 65 componentes de UI prontos, com navegação do app pronta (cabeçalho, barra inferior e menu), telas de exemplo, 3 modelos de marca e 4 paletas, para quem precisa sair do zero com um app funcionando e trocar marca sem mexer em componente.
+**Design system e boilerplate mobile em React Native (Expo), com Expo Router e NativeWind, para todo app novo em português do Brasil.** Traz 68 componentes de UI prontos, com navegação do app pronta (cabeçalho, barra inferior e menu), telas de exemplo, 3 modelos de marca e 4 paletas, para quem precisa sair do zero com um app funcionando e trocar marca sem mexer em componente.
 
 ![React Native](https://img.shields.io/badge/React%20Native-0.86-61DAFB?logo=react&logoColor=white)
 ![Expo SDK](https://img.shields.io/badge/Expo%20SDK-57-000020?logo=expo&logoColor=white)
@@ -55,9 +55,9 @@ Cada combinação de modelo e paleta tem um código `T#-C#` (por exemplo, `T1-C1
 - Scaffold Expo Router + TypeScript estrito + NativeWind.
 - Tokens de cor, tipografia, espaço, raio e sombra.
 - 3 modelos prontos (Safira/Poppins, Equilíbrio/DM Sans, Aurora/Inter) e 4 paletas prontas (Safira, Equilíbrio, Aurora, Ardósia).
-- `BrandProvider`/`useBrand`, com persistência local e troca em tempo de execução.
+- `BrandProvider`/`useBrand`, com persistência local e troca em tempo de execução (e, desde a 1.6.0, `palettes`, `defaultPaletteId`, `defaultModelCode` e `storage={false}`, descritos em `docs/COMO_APLICAR.md`).
 - `Gradient` em SVG.
-- Os 65 componentes de UI (`src/components/ui`, `src/components/layout`, `src/components/app-shell`, `src/components/splash`), listados abaixo.
+- Os 68 componentes de UI (`src/components/ui`, `src/components/layout`, `src/components/app-shell`, `src/components/splash`), listados abaixo.
 - `AppShell`: cabeçalho com título e seta de voltar, barra inferior de navegação rápida com botão central de menu, menu em gaveta ou folha, menu do usuário e sino de avisos opcional (`notifications`); só `navigation` é obrigatório, sem depender do roteador.
 - Telas de exemplo prontas: home (`/`), `/login`, `/painel`, `/clientes`, `/cadastro`, `/tarefas`, `/atendimento`, `/agenda`, `/kanban`, `/configuracoes` e a página 404; abertura animada (`RendraSplash`) ligada ao splash nativo; crédito discreto "Feito com Rendra" (`RendraCredit`), opcional.
 - `check:rules`, verificação estática das regras de `DESIGN_RULES.md`.
@@ -66,13 +66,13 @@ Cada combinação de modelo e paleta tem um código `T#-C#` (por exemplo, `T1-C1
 - Export web com SEO por rota (título, description, canonical, Open Graph, `sitemap.xml`, `robots.txt`, `llms.txt`), testado por Playwright (layout e toque) e axe (WCAG 2.1 AA).
 - CI (GitHub Actions), fluxo de IA e documentação completos.
 
-### Os 65 componentes de UI (disponíveis)
+### Os 68 componentes de UI (disponíveis)
 
-- **Ações (4):** Button, ButtonGroup, ActionBar, DropdownMenu.
+- **Ações (5):** Button, ButtonGroup, ActionBar, DropdownMenu, TextLink (link de texto, desde a 1.6.0).
 - **Formulário (16):** Input (com `trailingAction`, o botão de ação dentro do campo, desde a 1.5.0), Textarea, Select, Checkbox, CheckboxGroup, RadioGroup, Switch, Slider, OtpInput, DatePicker, Field, Form, FormField, FormSection, Rating e Checklist (os dois últimos, da Sincronização 2).
 - **Feedback (13):** BrandFeedbackIcon, Alert, Toast, Progress, Skeleton, Spinner, EmptyState, InfoHint, Modal, Drawer, Sheet (folha inferior, só no app, desde a 1.5.0), ErrorPage, RendraSplash.
-- **Exibição (13):** Card, Badge, Avatar, AvatarGroup, List (reordenável com `onReorder`, desde a 1.4.0), StatCard, Accordion, Tabs (com `overflow="scroll"` e `countLabel`, desde a 1.5.0), Separator, BrandLogo, RendraCredit, Stepper e Wizard (os dois últimos, da Sincronização 2).
-- **Layout (8):** Container, Stack, Inline, Grid, Section, PageHeader, AuthLayout, AppShell.
+- **Exibição (14):** Card, Badge, Avatar, AvatarGroup, List (reordenável com `onReorder`, desde a 1.4.0), StatCard, Accordion, Tabs (com `overflow="scroll"` e `countLabel`, desde a 1.5.0), Separator, BrandLogo, RendraCredit, Stepper e Wizard (os dois últimos, da Sincronização 2) e Text (o texto com a fonte do modelo, exportado desde a 1.6.0; usa `useBrand()`, então só funciona dentro do `BrandProvider`).
+- **Layout (9):** Container, Stack, Inline, Grid, Section, PageHeader, AuthLayout, AuthScreen (a tela cheia de autenticação, desde a 1.6.0), AppShell.
 - **Dados (5):** Chart (linha, barras, área, pizza, combinado, velocímetro de meta e funil; subcaminho `@rendra-ui/app/chart`) e Timeline, da F3, mais Pagination, DataToolbar e Table (lista de cards), da Sincronização 2.
 - **Planejamento e atendimento (4), da F3:** Calendar, Kanban, ImageViewer e o Chat de atendimento (`ConversationList`, `ChatThread` e `ChatComposer`, contados como um, mais o selo `ChannelBadge`).
 - **Editor e documentos (2), da F3:** RichTextEditor (`@rendra-ui/app/rich-text-editor`) e DocumentViewer (`@rendra-ui/app/document-viewer`).
@@ -82,7 +82,7 @@ Layout 6, Dados 5, Planejamento 5): `FormField`/`FormSection` entram compostos n
 longa)'` conta como entrada própria (decisão do fechamento da F1b), por isso a contagem da vitrine
 difere da contagem por exportação acima. Os cinco componentes da F2 (`RendraCredit`, `ErrorPage`,
 `AuthLayout`, `AppShell` e `RendraSplash`) não têm entrada própria na vitrine: aparecem em uso
-nas telas de exemplo (home, login, painel, atendimento, agenda, funil, configurações e 404).
+nas telas de exemplo (home, login, painel, atendimento, agenda, funil, configurações e 404). Os três da 1.6.0 (`AuthScreen`, `TextLink` e `Text`) também não têm entrada própria: `AuthScreen` e `TextLink` aparecem nas telas de login, cadastro e recuperação de senha, e o `Text` em todas.
 
 ## Stack
 
@@ -211,6 +211,26 @@ import { DocumentViewer } from '@rendra-ui/app/document-viewer'
 ```
 
 O pacote e o Tailwind pelo `npm install` comum, fixando `tailwindcss@3` (a `latest` é a 4, fora da faixa que a NativeWind suporta); os peers nativos pelo `npx expo install`, que escolhe a versão que o SDK do app empacota, em vez da versão mais nova do npm. `tailwind.config.js` com `presets: [require('@rendra-ui/app/tailwind-preset')]` e `content` incluindo `./node_modules/@rendra-ui/app/dist-lib/**/*.js`; `babel.config.js`/`metro.config.js` com NativeWind; `<GestureHandlerRootView style={{ flex: 1 }}>` (de `react-native-gesture-handler`) por fora de tudo, exigido pelo arraste da `List` reordenável, do `Slider` e do `ImageViewer`; `registerIconInterop()` e `<BrandProvider>` na raiz; `<RendraRouterBridge>` (Expo Router) ou um `RendraNavigationProvider` próprio. Componentes com `useAnimatedStyle` (`Button`, entre outros) exigem o plugin `react-native-worklets/plugin` no Babel: em app Expo, `babel-preset-expo` já inclui esse plugin sozinho; em bare React Native sem esse preset, acrescente à mão. Passo a passo completo em `docs/COMO_APLICAR.md`, seção "Pelo pacote npm". O `Chart` (linha, barra, área, pizza, combinado, velocímetro de meta e funil) mora no subcaminho `@rendra-ui/app/chart`, porque carrega o `d3-shape`: quem não importa o subcaminho não paga o peso dele.
+
+Testes do app que consome o pacote (Jest): o `dist-lib` já vem compilado pelo `tsc` e nunca passa pelo Babel, então, sob Jest, o `useAnimatedStyle` roda sem a lista de dependências e dá o erro "useAnimatedStyle was used without a dependency array". A saída é deixar o `transformIgnorePatterns` do preset do seu `jest.config.js` aceitar `@rendra-ui/.*`: some `|@rendra-ui/.*` ao fim do grupo do primeiro padrão, assim.
+
+```js
+// jest.config.js do app
+transformIgnorePatterns: [
+  'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|react-navigation|@react-navigation/.*|react-native-svg|nativewind|react-native-css-interop|lucide-react-native|@rendra-ui/.*)',
+],
+```
+
+O Metro não precisa disso: o app em execução transforma todo módulo pelo `babel-preset-expo`. Só o Jest pula `node_modules`.
+
+Se o seu `jest.config.js` não mapeia o `lucide-react-native`, acrescente também o `moduleNameMapper` abaixo. Sob Jest, o `import { icons } from 'lucide-react-native'` resolve para o `.mjs` do pacote, que o transform do `jest-expo` não cobre, e o teste cai em `SyntaxError: Unexpected token 'export'`. O mapeamento aponta para a build CJS, que expõe o mesmo `icons`.
+
+```js
+// jest.config.js do app
+moduleNameMapper: {
+  '^lucide-react-native$': '<rootDir>/node_modules/lucide-react-native/dist/cjs/lucide-react-native.js',
+},
+```
 
 Editor de texto rico: `import { RichTextEditor } from '@rendra-ui/app/rich-text-editor'` (subcaminho à parte, fora da entrada principal). Instale também o peer opcional `react-native-webview` com `npx expo install react-native-webview`. No celular é um editor visual (Tiptap dentro de um WebView, pelo `@10play/tentap-editor`); no navegador, só o modo HTML. O `npm install` pode mostrar o aviso `ERESOLVE overriding peer dependency` do `@10play/tentap-editor` (ele traz um `react-dom` 18 usado só dentro do WebView): é esperado e inofensivo. Por ora ficam de fora alinhamento de texto, tabela, linha divisória e limpar formatação. O botão "Inserir imagem" só aparece com `onImageUpload`, que no celular não recebe arquivo: o app abre o seletor, envia a imagem e devolve o endereço público (no web a função recebe um `File`).
 

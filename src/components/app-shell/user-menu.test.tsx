@@ -74,3 +74,60 @@ describe('UserMenu', () => {
     expect(tela.queryByRole('menuitem', { name: 'Sair' })).toBeNull()
   })
 })
+
+describe('UserMenu: workspaces (seletor de espaço no topo)', () => {
+  const workspaces = {
+    items: [
+      { id: 'a', label: 'Matriz' },
+      { id: 'b', label: 'Filial Sul' },
+    ],
+    activeId: 'a',
+    onSelect: jest.fn(),
+  }
+  beforeEach(() => workspaces.onSelect.mockClear())
+
+  it('sem workspaces, o menu não mostra o rótulo "Espaço" nem os itens (os casos de sempre)', async () => {
+    const tela = await montar({})
+    await fireEvent.press(await tela.findByRole('button', { name: 'Menu de Ana Ribeiro' }))
+    await tela.findByText('ana@exemplo.com')
+    expect(tela.queryByText('Espaço')).toBeNull()
+  })
+
+  it('mostra o rótulo padrão "Espaço" e os itens acima do nome e do e-mail, com o ativo marcado', async () => {
+    const tela = await montar({ workspaces } as never)
+    await fireEvent.press(await tela.findByRole('button', { name: 'Menu de Ana Ribeiro' }))
+    expect(await tela.findByText('Espaço')).toBeTruthy()
+    const matriz = await tela.findByRole('menuitem', { name: 'Matriz' })
+    const filial = await tela.findByRole('menuitem', { name: 'Filial Sul' })
+    expect(matriz.props.accessibilityState).toMatchObject({ selected: true })
+    expect(filial.props.accessibilityState).toMatchObject({ selected: false })
+    // ordem de leitura: espaços antes do nome e do e-mail
+    const textos = tela.container
+      .queryAll((no) => typeof no.props.children === 'string')
+      .map((no) => no.props.children as string)
+    expect(textos.indexOf('Matriz')).toBeLessThan(textos.indexOf('Ana Ribeiro'))
+    expect(textos.indexOf('Espaço')).toBeLessThan(textos.indexOf('Matriz'))
+  })
+
+  it('label próprio troca o rótulo do grupo', async () => {
+    const tela = await montar({ workspaces: { ...workspaces, label: 'Empresa' } } as never)
+    await fireEvent.press(await tela.findByRole('button', { name: 'Menu de Ana Ribeiro' }))
+    expect(await tela.findByText('Empresa')).toBeTruthy()
+    expect(tela.queryByText('Espaço')).toBeNull()
+  })
+
+  it('tocar em outro espaço chama onSelect(id) e fecha o menu', async () => {
+    const tela = await montar({ workspaces } as never)
+    await fireEvent.press(await tela.findByRole('button', { name: 'Menu de Ana Ribeiro' }))
+    await fireEvent.press(await tela.findByRole('menuitem', { name: 'Filial Sul' }))
+    expect(workspaces.onSelect).toHaveBeenCalledWith('b')
+    expect(tela.queryByRole('menuitem', { name: 'Filial Sul' })).toBeNull()
+  })
+
+  it('tocar no espaço ativo também chama onSelect (sem filtro inventado)', async () => {
+    const tela = await montar({ workspaces } as never)
+    await fireEvent.press(await tela.findByRole('button', { name: 'Menu de Ana Ribeiro' }))
+    await fireEvent.press(await tela.findByRole('menuitem', { name: 'Matriz' }))
+    expect(workspaces.onSelect).toHaveBeenCalledWith('a')
+  })
+})

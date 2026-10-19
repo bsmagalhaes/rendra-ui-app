@@ -7,7 +7,7 @@ import { defaultShellLayout, layoutOptions } from './layout'
 import type { ShellLayout, ShellLayoutCode } from './layout'
 import { getBottomNavItems, getNavigationTargets, resolveActiveTo } from './navigation-utils'
 import type { NavigationTarget } from './navigation-utils'
-import type { NavGroup, NavItem, ShellMenuItem, ShellNotificationsConfig, ShellUser } from './types'
+import type { NavGroup, NavItem, ShellCenterButton, ShellMenuItem, ShellNotificationsConfig, ShellUser, ShellWorkspaces } from './types'
 
 const STORAGE_KEY = 'rendra:shell-layout'
 
@@ -50,6 +50,12 @@ export interface ShellContextValue {
   /** Sino de notificações do cabeçalho; ausente, o shell não mostra sino. */
   notifications?: ShellNotificationsConfig
   homeLabel?: string
+  /** Botão central da barra inferior (ícone e rótulo próprios); ausente, o botão de menu de sempre. */
+  centerButton?: ShellCenterButton
+  /** Seletor de espaço no topo do menu do usuário. */
+  workspaces?: ShellWorkspaces
+  /** Logo no lugar do título do cabeçalho. */
+  headerLogo?: ReactNode
   /** Título e ajuda enviados pela tela (o `PageHeader` dentro do shell). */
   pageTitle?: string
   pageHelp?: string
@@ -121,6 +127,16 @@ export interface ShellProviderProps {
   /** Sino de notificações do cabeçalho (opcional, a lista é copiada na montagem). */
   notifications?: ShellNotificationsConfig
   homeLabel?: string
+  /** Botão central da barra inferior: ícone (`'brand-symbol'` ou um componente) e rótulo acessível próprios. */
+  centerButton?: ShellCenterButton
+  /** Seletor de espaço (empresa, filial) no topo do menu do usuário; só aparece com `user`. */
+  workspaces?: ShellWorkspaces
+  /**
+   * Logo (por exemplo, um `BrandLogo`) no lugar do título no cabeçalho. O título continua no
+   * cabeçalho só para o leitor de tela (oculto visualmente) e o logo é decorativo para ele. A
+   * ajuda (`InfoHint`) segue ao lado. Passe um elemento estável: um novo a cada render refaz o contexto.
+   */
+  headerLogo?: ReactNode
   /** Deixa a pessoa trocar e gravar o layout (padrão `true`). */
   userConfigurable?: boolean
   children: ReactNode
@@ -134,6 +150,9 @@ export function ShellProvider({
   onLogout,
   notifications,
   homeLabel,
+  centerButton,
+  workspaces,
+  headerLogo,
   userConfigurable = true,
   children,
 }: ShellProviderProps) {
@@ -223,6 +242,9 @@ export function ShellProvider({
       onLogout,
       notifications,
       homeLabel,
+      centerButton,
+      workspaces,
+      headerLogo,
       pageTitle: metaAtual?.title,
       pageHelp: metaAtual?.help,
       setPageMeta,
@@ -243,6 +265,9 @@ export function ShellProvider({
       onLogout,
       notifications,
       homeLabel,
+      centerButton,
+      workspaces,
+      headerLogo,
       metaAtual,
       setPageMeta,
     ],

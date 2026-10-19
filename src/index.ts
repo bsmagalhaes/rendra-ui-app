@@ -5,6 +5,8 @@
 export * from './components/ui'
 export * from './components/layout'
 export * from './components/app-shell'
+export { Text } from './components/internal/text'
+export type { TextProps } from './components/internal/text'
 export { RendraSplash } from './components/splash/rendra-splash'
 export type { RendraSplashProps } from './components/splash/rendra-splash'
 export { Gradient, gradientStops } from './components/gradient/gradient'

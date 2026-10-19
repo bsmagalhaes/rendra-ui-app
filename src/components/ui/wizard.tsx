@@ -3,6 +3,8 @@ import type { ReactNode } from 'react'
 import { View } from 'react-native'
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react-native'
 import { Text } from '../internal/text'
+import { gapClass } from '../layout/tokens'
+import { cn } from '../../lib/cn'
 import { ActionBar } from './action-bar'
 import { Progress } from './progress'
 
@@ -59,6 +61,24 @@ export interface WizardProps {
   onFinish?: () => void | Promise<void>
   onCancel?: () => void
   finishLabel?: string
+  /** Rótulo do botão da esquerda na primeira etapa (com `onCancel`). Padrão "Cancelar". */
+  cancelLabel?: string
+  /** Rótulo do botão da esquerda a partir da segunda etapa. Padrão "Voltar". */
+  backLabel?: string
+  /** Rótulo do botão da direita nas etapas que não são a última. Padrão "Avançar". */
+  nextLabel?: string
+  /**
+   * Chamado ao tocar em "Pular", que avança para a próxima etapa sem validar a atual. Sem esta
+   * prop não há "Pular". A ação fica no menu "Mais ações" do rodapé e não aparece na última etapa.
+   */
+  onSkip?: () => void
+  /** Texto da ação de pular. Padrão "Pular". */
+  skipLabel?: string
+  /**
+   * Espaço entre o indicador, o conteúdo da etapa e o rodapé: `'section'` (padrão, 32 px) ou
+   * `'fields'` (16 px). O espaço interno do conteúdo da etapa não muda.
+   */
+  gap?: 'fields' | 'section'
   /** Rodapé fixo na parte de baixo da tela. Padrão: não, segue junto do conteúdo. */
   stickyFooter?: boolean
 }
@@ -75,6 +95,12 @@ export function Wizard({
   onFinish,
   onCancel,
   finishLabel = 'Concluir',
+  cancelLabel = 'Cancelar',
+  backLabel = 'Voltar',
+  nextLabel = 'Avançar',
+  onSkip,
+  skipLabel = 'Pular',
+  gap = 'section',
   stickyFooter = false,
 }: WizardProps) {
   const [current, setCurrent] = useState(0)
@@ -106,8 +132,14 @@ export function Wizard({
     }
   }
 
+  const skip = () => {
+    // Pular não valida e não mexe nos erros: só avança e avisa o consumidor.
+    onSkip?.()
+    setCurrent((c) => c + 1)
+  }
+
   return (
-    <View dataSet={{ rendra: 'WIZ-001' }} className="min-w-0 flex-col gap-8">
+    <View dataSet={{ rendra: 'WIZ-001' }} className={cn('min-w-0 flex-col', gapClass[gap])}>
       <Stepper steps={steps} current={current} errors={errors} />
       <View className="min-w-0 flex-col gap-6">{children[current]}</View>
       <ActionBar
@@ -115,13 +147,14 @@ export function Wizard({
         sticky={stickyFooter}
         cancel={
           current > 0
-            ? { label: 'Voltar', icon: <ArrowLeft className="text-foreground" />, onPress: () => setCurrent((c) => c - 1) }
+            ? { label: backLabel, icon: <ArrowLeft className="text-foreground" />, onPress: () => setCurrent((c) => c - 1) }
             : onCancel
-              ? { label: 'Cancelar', onPress: onCancel }
+              ? { label: cancelLabel, onPress: onCancel }
               : undefined
         }
+        secondary={onSkip && !last ? [{ label: skipLabel, onPress: skip, disabled: busy }] : undefined}
         primary={{
-          label: last ? finishLabel : 'Avançar',
+          label: last ? finishLabel : nextLabel,
           icon: last ? <Check className="text-primary-foreground" /> : <ArrowRight className="text-primary-foreground" />,
           onPress: next,
           loading: busy,

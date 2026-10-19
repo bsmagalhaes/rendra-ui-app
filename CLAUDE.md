@@ -14,7 +14,7 @@ A seção "REGRA INEGOCIÁVEL: MATRIZ DE MODELOS" abaixo vale para a manutençã
 
 ## Resumo do projeto
 
-Design system e boilerplate mobile do Rendra, completo, com 65 componentes de UI (spec de fundação e componentes, mais `AppShell`, telas base, home e splash da F2, e Chart, Timeline, Calendar, Kanban, ImageViewer, Chat, RichTextEditor e DocumentViewer da F3, e Rating, Checklist, Pagination, DataToolbar, Table, Stepper e Wizard da Sincronização 2), publicado como pacote npm (`@rendra-ui/app`, primeira publicação em 0.3.0; a versão corrente está em `CHANGELOG.md`). Sobre a fundação: scaffold Expo Router + NativeWind, tokens, os 3 modelos, `BrandProvider`/`useBrand`, `Gradient`, fontes, `check:rules`, vitrine completa (`/componentes`, `/tokens` e `/galeria`).
+Design system e boilerplate mobile do Rendra, completo, com 68 componentes de UI (spec de fundação e componentes, mais `AppShell`, telas base, home e splash da F2, e Chart, Timeline, Calendar, Kanban, ImageViewer, Chat, RichTextEditor e DocumentViewer da F3, e Rating, Checklist, Pagination, DataToolbar, Table, Stepper e Wizard da Sincronização 2), publicado como pacote npm (`@rendra-ui/app`, primeira publicação em 0.3.0; a versão corrente está em `CHANGELOG.md`). Sobre a fundação: scaffold Expo Router + NativeWind, tokens, os 3 modelos, `BrandProvider`/`useBrand`, `Gradient`, fontes, `check:rules`, vitrine completa (`/componentes`, `/tokens` e `/galeria`).
 
 <!-- rendra:verificacao:inicio -->
 Leia e siga o `AGENTS.md` na raiz, inteiro, antes de qualquer coisa.

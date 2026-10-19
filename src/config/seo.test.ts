@@ -36,7 +36,7 @@ describe('routeSeo', () => {
   it('a contagem de componentes nas descricoes bate com os 57 da F3 (49 da F2 mais Chart, Timeline, Calendar, Kanban, ImageViewer, Chat, RichTextEditor e DocumentViewer)', () => {
     const raiz = routeSeo.find((r) => r.path === '/')
     const vitrine = routeSeo.find((r) => r.path === '/componentes')
-    expect(raiz?.description).toContain('65 componentes de UI')
+    expect(raiz?.description).toContain('68 componentes de UI')
     expect(raiz?.description).not.toContain('49')
     expect(vitrine?.description).not.toMatch(/44/)
   })

@@ -97,6 +97,129 @@ describe('PageHeader', () => {
   })
 })
 
+describe('PageHeader: className, align e inset', () => {
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+  const classesDe = (no: { props: Record<string, unknown> }) => String(no.props.className ?? '').split(' ')
+
+  it('className="mb-0" vence a margem negativa embutida (-mb-2): é o caminho para tirá-la, sem prop nova', async () => {
+    const { findByTestId, rerender } = await render(
+      <BrandProvider>
+        <PageHeader title="Minha tela" description="Descrição" testID="cabecalho" />
+      </BrandProvider>,
+    )
+    expect(classesDe(await findByTestId('cabecalho'))).toContain('-mb-2')
+    await rerender(
+      <BrandProvider>
+        <PageHeader title="Minha tela" description="Descrição" testID="cabecalho" className="mb-0" />
+      </BrandProvider>,
+    )
+    const classes = classesDe(await findByTestId('cabecalho'))
+    expect(classes).toContain('mb-0')
+    expect(classes).not.toContain('-mb-2')
+  })
+
+  it('align="center" centraliza o título (linha e coluna) e a descrição; o padrão não centraliza', async () => {
+    const montar = (align?: 'center') => (
+      <BrandProvider>
+        <PageHeader title="Minha tela" showTitle description="Descrição" align={align} />
+      </BrandProvider>
+    )
+    const { findByText, rerender } = await render(montar())
+    const titulo = await findByText('Minha tela')
+    const linha = () => classesDe(titulo.parent as unknown as { props: Record<string, unknown> })
+    const coluna = () => classesDe(titulo.parent!.parent as unknown as { props: Record<string, unknown> })
+    expect(linha()).not.toContain('justify-center')
+    expect(coluna()).not.toContain('items-center')
+    expect(classesDe(await findByText('Descrição'))).not.toContain('text-center')
+    await rerender(montar('center'))
+    expect(linha()).toContain('justify-center')
+    expect(coluna()).toContain('items-center')
+    expect(classesDe(await findByText('Descrição'))).toContain('text-center')
+  })
+
+  it('inset={false} fora do shell zera o paddingTop mesmo com inset superior; o padrão soma o inset', async () => {
+    jest.spyOn(SafeAreaContext, 'useSafeAreaInsets').mockReturnValue({ top: 24, bottom: 0, left: 0, right: 0 })
+    const { findByTestId, rerender } = await render(
+      <BrandProvider>
+        <PageHeader title="Minha tela" showTitle testID="cabecalho" />
+      </BrandProvider>,
+    )
+    expect(StyleSheet.flatten((await findByTestId('cabecalho')).props.style)).toMatchObject({ paddingTop: 24 })
+    await rerender(
+      <BrandProvider>
+        <PageHeader title="Minha tela" showTitle testID="cabecalho" inset={false} />
+      </BrandProvider>,
+    )
+    expect(StyleSheet.flatten((await findByTestId('cabecalho')).props.style)).toMatchObject({ paddingTop: 0 })
+  })
+})
+
+describe('PageHeader: bodyTitle', () => {
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+  const classesDe = (no: { props: Record<string, unknown> }) => String(no.props.className ?? '').split(' ')
+
+  function noShell(filho: React.ReactNode) {
+    return render(
+      <BrandProvider>
+        <RendraNavigationProvider value={{ navigate: jest.fn(), currentPath: '/paginas' }}>
+          <AppShell navigation={navComPagina}>{filho}</AppShell>
+        </RendraNavigationProvider>
+      </BrandProvider>,
+    )
+  }
+
+  it('dentro do shell, mostra o título discreto (text-base) no corpo, sem a classe de ocultação, e a raiz também não fica oculta', async () => {
+    const { findAllByText, findByTestId } = await noShell(<PageHeader title="Minha tela" bodyTitle testID="cabecalho" />)
+    const titulos = await findAllByText('Minha tela')
+    // um no cabeçalho do shell e um no corpo, os dois visíveis
+    expect(titulos).toHaveLength(2)
+    for (const titulo of titulos) {
+      const classes = classesDe(titulo)
+      expect(classes).toContain('text-base')
+      expect(classes).not.toContain('absolute')
+    }
+    const raiz = classesDe(await findByTestId('cabecalho'))
+    expect(raiz).not.toContain('absolute')
+    expect(raiz).not.toContain('overflow-hidden')
+  })
+
+  it('o título do corpo mantém accessibilityRole header e o cabeçalho do shell segue recebendo o título', async () => {
+    const { findAllByText, findByTestId } = await noShell(<PageHeader title="Minha tela" bodyTitle testID="cabecalho" />)
+    const doCorpo = (await findAllByText('Minha tela')).find(
+      (no) => no.props.accessibilityRole === 'header' && !classesDe(no).includes('absolute'),
+    )
+    expect(doCorpo).toBeTruthy()
+    expect(await within(await findByTestId('shell-cabecalho')).findByText('Minha tela')).toBeTruthy()
+  })
+
+  it('sem bodyTitle, dentro do shell, o título do corpo continua oculto (comportamento de hoje)', async () => {
+    const { findAllByText } = await noShell(<PageHeader title="Minha tela" description="Descrição" />)
+    const classes = (await findAllByText('Minha tela')).map((no) => classesDe(no))
+    expect(classes.filter((c) => c.includes('absolute'))).toHaveLength(1)
+  })
+
+  it('fora do shell, bodyTitle não tem efeito: o título só aparece com showTitle, em text-2xl', async () => {
+    const { findByText, rerender } = await render(
+      <BrandProvider>
+        <PageHeader title="Minha tela" description="Descrição" bodyTitle />
+      </BrandProvider>,
+    )
+    expect(classesDe(await findByText('Minha tela'))).toContain('absolute')
+    await rerender(
+      <BrandProvider>
+        <PageHeader title="Minha tela" showTitle bodyTitle />
+      </BrandProvider>,
+    )
+    const classes = classesDe(await findByText('Minha tela'))
+    expect(classes).toContain('text-2xl')
+    expect(classes).not.toContain('text-base')
+  })
+})
+
 describe('PageHeader dentro do AppShell', () => {
   afterEach(() => {
     jest.restoreAllMocks()

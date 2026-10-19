@@ -303,3 +303,174 @@ describe('BrandProvider: rendraRoot (Tarefa 6.4, secao 3.2 item 4 do levantament
     })
   })
 })
+
+// Item 8 (app-correcoes): palettes, defaultPaletteId, defaultModelCode e storage={false}.
+const paletaDoCliente = {
+  id: 'cliente',
+  name: 'Cliente',
+  primary: '#ffcc00',
+  primaryHover: '#e6b800',
+  secondary: '#ff6699',
+  secondaryHover: '#e0507f',
+  gradient: ['#ffe680', '#ffcc00', '#b38f00'] as [string, string, string],
+}
+const outraPaleta = { ...paletaDoCliente, id: 'outra', name: 'Outra', primary: '#0b6bcb', primaryHover: '#0a5bb0' }
+
+// Guarda o que cada render do provider entregou, para afirmar a PRIMEIRA pintura, não só o estado final.
+function Gravador({ vistos }: { vistos: { modelCode: string; paletteId: string; hydrated: boolean }[] }) {
+  const { modelCode, paletteId, hydrated } = useBrand()
+  vistos.push({ modelCode, paletteId, hydrated })
+  return null
+}
+
+describe('BrandProvider: defaultModelCode e defaultPaletteId', () => {
+  beforeEach(async () => {
+    await AsyncStorage.clear()
+    jest.restoreAllMocks()
+  })
+
+  it('o PRIMEIRO render já usa o modelo e a paleta padrão passados', async () => {
+    const vistos: { modelCode: string; paletteId: string; hydrated: boolean }[] = []
+    await render(
+      <BrandProvider defaultModelCode="T2" defaultPaletteId="aurora">
+        <Gravador vistos={vistos} />
+      </BrandProvider>,
+    )
+    expect(vistos[0]).toEqual({ modelCode: 'T2', paletteId: 'aurora', hydrated: false })
+    await waitFor(() => expect(vistos.at(-1)!.hydrated).toBe(true))
+    expect(vistos.at(-1)).toMatchObject({ modelCode: 'T2', paletteId: 'aurora' })
+  })
+
+  it('uma escolha salva no armazenamento vence o padrão depois de hidratar', async () => {
+    await AsyncStorage.setItem(
+      'rendra:brand',
+      JSON.stringify({ version: 1, modelCode: 'T3', paletteId: 'ardosia', mode: 'dark' }),
+    )
+    const { result } = await renderHook(() => useBrand(), {
+      wrapper: ({ children }) => (
+        <BrandProvider defaultModelCode="T2" defaultPaletteId="aurora">
+          {children}
+        </BrandProvider>
+      ),
+    })
+    await waitFor(() => expect(result.current.hydrated).toBe(true))
+    expect(result.current.modelCode).toBe('T3')
+    expect(result.current.paletteId).toBe('ardosia')
+  })
+
+  it('id desconhecido em defaultPaletteId cai na primeira paleta da lista', async () => {
+    const { result } = await renderHook(() => useBrand(), {
+      wrapper: ({ children }) => <BrandProvider defaultPaletteId="nao-existe">{children}</BrandProvider>,
+    })
+    expect(result.current.paletteId).toBe('safira')
+    await waitFor(() => expect(result.current.hydrated).toBe(true))
+    expect(result.current.paletteId).toBe('safira')
+  })
+})
+
+describe('BrandProvider: palettes próprias', () => {
+  beforeEach(async () => {
+    await AsyncStorage.clear()
+    jest.restoreAllMocks()
+  })
+  const comPaletas = ({ children }: { children: React.ReactNode }) => (
+    <BrandProvider palettes={[paletaDoCliente, outraPaleta]} defaultPaletteId="outra">
+      {children}
+    </BrandProvider>
+  )
+
+  it('substitui as quatro prontas: useBrand().palettes reflete a lista e a ativa vem dela', async () => {
+    const { result } = await renderHook(() => useBrand(), { wrapper: comPaletas })
+    await waitFor(() => expect(result.current.hydrated).toBe(true))
+    expect(result.current.palettes.map((p) => p.id)).toEqual(['cliente', 'outra'])
+    expect(result.current.paletteId).toBe('outra')
+    expect(result.current.palette.light['--rendra-primary']).toBe('#0b6bcb')
+  })
+
+  it('sem defaultPaletteId, a primeira paleta da lista é a ativa', async () => {
+    const { result } = await renderHook(() => useBrand(), {
+      wrapper: ({ children }) => <BrandProvider palettes={[paletaDoCliente, outraPaleta]}>{children}</BrandProvider>,
+    })
+    expect(result.current.paletteId).toBe('cliente')
+    expect(result.current.palette.light['--rendra-primary']).toBe('#ffcc00')
+  })
+
+  it('o código da paleta própria é o id em maiúsculas (fora de C1 a C4)', async () => {
+    await render(
+      <BrandProvider palettes={[paletaDoCliente]}>
+        <Text>x</Text>
+      </BrandProvider>,
+    )
+    await waitFor(() => expect(screen.getByTestId('rendra-T1-CLIENTE')).toBeTruthy())
+  })
+
+  it('paleta salva que não está na lista passada é ignorada: volta ao padrão da lista', async () => {
+    await AsyncStorage.setItem('rendra:brand', JSON.stringify({ version: 1, modelCode: 'T1', paletteId: 'safira', mode: 'system' }))
+    const { result } = await renderHook(() => useBrand(), { wrapper: comPaletas })
+    await waitFor(() => expect(result.current.hydrated).toBe(true))
+    expect(result.current.paletteId).toBe('outra')
+  })
+
+  it('paleta salva que está na lista passada é aceita', async () => {
+    await AsyncStorage.setItem('rendra:brand', JSON.stringify({ version: 1, modelCode: 'T1', paletteId: 'cliente', mode: 'system' }))
+    const { result } = await renderHook(() => useBrand(), { wrapper: comPaletas })
+    await waitFor(() => expect(result.current.paletteId).toBe('cliente'))
+  })
+})
+
+describe('BrandProvider: storage={false}', () => {
+  beforeEach(async () => {
+    await AsyncStorage.clear()
+    jest.restoreAllMocks()
+    // O mock do AsyncStorage já é jest.fn: o spyOn devolve o mesmo, com as chamadas dos testes anteriores.
+    for (const metodo of [AsyncStorage.getItem, AsyncStorage.setItem, AsyncStorage.removeItem]) (metodo as jest.Mock).mockClear()
+  })
+  const semStorage = ({ children }: { children: React.ReactNode }) => <BrandProvider storage={false}>{children}</BrandProvider>
+
+  it('nunca lê nem grava no AsyncStorage, mesmo trocando modelo, modo e paleta', async () => {
+    const getItem = jest.spyOn(AsyncStorage, 'getItem')
+    const setItem = jest.spyOn(AsyncStorage, 'setItem')
+    const removeItem = jest.spyOn(AsyncStorage, 'removeItem')
+    const { result } = await renderHook(() => useBrand(), { wrapper: semStorage })
+    await act(async () => result.current.setModelCode('T2'))
+    await act(async () => result.current.setMode('dark'))
+    await act(async () => result.current.setPaletteId('aurora'))
+    await act(async () => result.current.applyPalette(paletaDoCliente))
+    expect(getItem).not.toHaveBeenCalled()
+    expect(setItem).not.toHaveBeenCalled()
+    expect(removeItem).not.toHaveBeenCalled()
+  })
+
+  it('hidratado de imediato: o testID da raiz aparece no primeiro render e os setters funcionam', async () => {
+    const vistos: { modelCode: string; paletteId: string; hydrated: boolean }[] = []
+    await render(
+      <BrandProvider storage={false}>
+        <Gravador vistos={vistos} />
+      </BrandProvider>,
+    )
+    expect(vistos[0]!.hydrated).toBe(true)
+    expect(screen.getByTestId('rendra-T1-C1')).toBeTruthy()
+  })
+
+  it('applyPalette muda a paleta ativa sem gravar nada', async () => {
+    const setItem = jest.spyOn(AsyncStorage, 'setItem')
+    const { result } = await renderHook(() => useBrand(), { wrapper: semStorage })
+    await act(async () => result.current.applyPalette(paletaDoCliente))
+    expect(result.current.paletteId).toBe('cliente')
+    expect(result.current.palette.light['--rendra-primary']).toBe('#ffcc00')
+    expect(setItem).not.toHaveBeenCalled()
+  })
+
+  it('o que já estava salvo no armazenamento não é lido: vale o padrão passado', async () => {
+    await AsyncStorage.setItem('rendra:brand', JSON.stringify({ version: 1, modelCode: 'T3', paletteId: 'ardosia', mode: 'dark' }))
+    const { result } = await renderHook(() => useBrand(), {
+      wrapper: ({ children }) => (
+        <BrandProvider storage={false} defaultModelCode="T2">
+          {children}
+        </BrandProvider>
+      ),
+    })
+    expect(result.current.modelCode).toBe('T2')
+    expect(result.current.paletteId).toBe('safira')
+  })
+})

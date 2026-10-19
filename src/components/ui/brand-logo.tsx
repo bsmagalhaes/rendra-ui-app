@@ -46,7 +46,7 @@ const wordClass: Record<'sidebar' | 'surface' | 'brand', [string, string]> = {
 }
 
 export function BrandLogo({ on = 'surface', symbolOnly = false, size = 'md', className, testID }: BrandLogoProps) {
-  const { brand } = useBrand()
+  const { brand, resolvedMode, sidebarLogoVariant } = useBrand()
   // C7 (veredito do Opus): `brand.symbol` é `ComponentType<SvgProps>`; atribuir a uma constante
   // com nome capitalizado antes de usar como tag JSX (`<Symbol .../>`), em vez de `<brand.symbol
   // .../>`, deixa o componente igual ao padrão já usado em brand-feedback-icon.tsx.
@@ -61,6 +61,26 @@ export function BrandLogo({ on = 'surface', symbolOnly = false, size = 'md', cla
         accessibilityElementsHidden: true,
         importantForAccessibility: 'no-hide-descendants' as const,
       }
+
+  // Arte oficial: com `logoMode: 'image'` e `brand.logo`, desenha o logotipo completo (claro ou
+  // escuro) no lugar do selo e da palavra. Sobre a sidebar vale a variante da paleta; sobre o
+  // degradê da marca, sempre a escura; nos demais casos, a do modo ativo.
+  if (brand.logoMode === 'image' && brand.logo && !symbolOnly) {
+    const variante = on === 'sidebar' ? sidebarLogoVariant : on === 'brand' || resolvedMode === 'dark' ? 'dark' : 'light'
+    const Logo = brand.logo[variante]
+    return (
+      <View
+        accessible
+        role={a11yPresets.img.role}
+        accessibilityLabel={brand.productName}
+        className={cn('flex-row items-center', className)}
+        dataSet={{ rendra: 'LOGO-001' }}
+      >
+        {/* O tamanho vem de classe da escala (nunca `style`): o Svg não tem tamanho intrínseco no RN, então `w-auto` daria largura zero. */}
+        <Logo className="h-8 w-24" preserveAspectRatio="xMinYMid meet" aria-hidden />
+      </View>
+    )
+  }
 
   return (
     <View className={cn('flex-row items-center gap-3', className)} dataSet={{ rendra: 'LOGO-001' }}>

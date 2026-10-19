@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useBrand } from '../src/brand'
 import { ActionBar, Checkbox, Form, FormField, Input } from '../src/components/ui'
-import { AuthScreen } from '../src/demo/auth-screen'
+import { AuthScreen } from '../src/components/layout'
 import { useDocumentTitle } from '../src/lib/use-document-title'
 import { zBR } from '../src/lib/validators'
 

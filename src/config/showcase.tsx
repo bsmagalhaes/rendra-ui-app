@@ -1142,6 +1142,9 @@ function WizardExample() {
     <Wizard
       steps={etapasCadastro}
       onValidateStep={(i) => (i === 0 ? nome.trim().length > 0 : true)}
+      onSkip={() => {
+        toast.info('Etapa pulada')
+      }}
       onFinish={() => {
         toast.success('Cadastro concluído')
       }}

@@ -5,11 +5,15 @@ import { Text } from '../internal/text'
 import { Button } from '../ui/button'
 import { InfoHint } from '../ui/info-hint'
 import { useBrand } from '../../brand/use-brand'
+import { cn } from '../../lib/cn'
 import { useRendraNavigation } from '../../navigation/rendra-navigation'
 import { getBackTarget } from './navigation-utils'
 import { useShell } from './shell-context'
 import { Notifications } from './notifications'
 import { UserMenu } from './user-menu'
+
+// Equivalente RN da técnica sr-only (mesma de `page-header.tsx`): fica no leitor de tela, some da vista.
+const visuallyHiddenClassName = 'absolute h-px w-px overflow-hidden'
 
 /**
  * Cabeçalho do AppShell: seta de voltar (rota de segundo nível) ou botão de menu (sem barra
@@ -33,6 +37,8 @@ export function Header() {
     user,
     userMenuItems,
     onLogout,
+    workspaces,
+    headerLogo,
   } = useShell()
 
   const back = currentPath === undefined ? null : getBackTarget(navigation, currentPath)
@@ -60,13 +66,27 @@ export function Header() {
           />
         ) : null}
         <View className="min-w-0 flex-1 flex-row items-center gap-1">
-          <Text weight="semibold" className="shrink text-base text-foreground" numberOfLines={1}>
+          {headerLogo ? (
+            <View
+              aria-hidden
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+              className="shrink-0"
+            >
+              {headerLogo}
+            </View>
+          ) : null}
+          <Text
+            weight="semibold"
+            className={cn('text-base text-foreground', headerLogo ? visuallyHiddenClassName : 'shrink')}
+            numberOfLines={1}
+          >
             {title}
           </Text>
           {pageHelp ? <InfoHint title={pageTitle ?? title}>{pageHelp}</InfoHint> : null}
         </View>
         <Notifications />
-        {user ? <UserMenu user={user} userMenuItems={userMenuItems} onLogout={onLogout} /> : null}
+        {user ? <UserMenu user={user} userMenuItems={userMenuItems} onLogout={onLogout} workspaces={workspaces} /> : null}
       </View>
     </View>
   )

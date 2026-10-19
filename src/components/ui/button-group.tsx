@@ -19,6 +19,12 @@ export interface ButtonGroupProps {
   onChange?: (value: string) => void
   size?: 'sm' | 'md'
   fullWidth?: boolean
+  /**
+   * `'horizontal'` (padrão, igual ao de sempre) ou `'vertical'`: os botões empilhados, com as
+   * bordas unidas (modo grupo) ou as opções uma sobre a outra (modo segmentado), cada um na
+   * largura inteira.
+   */
+  orientation?: 'horizontal' | 'vertical'
   accessibilityLabel?: string
   className?: string
 }
@@ -32,16 +38,24 @@ export function ButtonGroup({
   onChange,
   size = 'md',
   fullWidth = false,
+  orientation = 'horizontal',
   accessibilityLabel,
   className,
 }: ButtonGroupProps) {
+  const vertical = orientation === 'vertical'
+
   if (options) {
     return (
       <View
         accessibilityRole={a11yPresets.radiogroup.accessibilityRole}
         accessibilityLabel={accessibilityLabel}
         dataSet={{ rendra: 'BTNG-001' }}
-        className={cn('flex-row flex-wrap gap-1 rounded-control border border-border bg-muted p-1', fullWidth && 'w-full', className)}
+        className={cn(
+          vertical ? 'flex-col gap-1' : 'flex-row flex-wrap gap-1',
+          'rounded-control border border-border bg-muted p-1',
+          fullWidth && 'w-full',
+          className,
+        )}
       >
         {options.map((option) => {
           const checked = option.value === value
@@ -80,7 +94,8 @@ export function ButtonGroup({
                 // reintroduzir a sombra tênue na opção não marcada (M1). Não reproduz em
                 // Jest/RNTL nem em Playwright (achado só aparece no runtime nativo Fabric/Hermes
                 // real; prova do próprio gatilho sob Jest em button-group.test.tsx, M3).
-                'flex-1 flex-row min-h-touch items-center justify-center gap-2 rounded-item px-3',
+                vertical ? 'w-full' : 'flex-1',
+                'flex-row min-h-touch items-center justify-center gap-2 rounded-item px-3',
                 heightClass[size],
                 checked ? 'bg-card shadow-sm' : 'bg-muted shadow-none',
                 option.disabled && 'opacity-50',
@@ -104,19 +119,33 @@ export function ButtonGroup({
       accessibilityRole={a11yPresets.toolbar.accessibilityRole}
       accessibilityLabel={accessibilityLabel}
       dataSet={{ rendra: 'BTNG-001' }}
-      className={cn('flex-row', fullWidth && 'w-full', className)}
+      className={cn(vertical ? 'flex-col' : 'flex-row', fullWidth && 'w-full', className)}
     >
       {items.map((child, index) => {
         const isFirst = index === 0
         const isLast = index === items.length - 1
-        const positionClass = isFirst
-          ? 'rounded-l-control rounded-r-none'
-          : isLast
-            ? 'rounded-r-control rounded-l-none'
-            : 'rounded-none'
+        const positionClass = vertical
+          ? isFirst && isLast
+            ? 'rounded-control'
+            : isFirst
+              ? 'rounded-t-control rounded-b-none'
+              : isLast
+                ? 'rounded-b-control rounded-t-none'
+                : 'rounded-none'
+          : isFirst
+            ? 'rounded-l-control rounded-r-none'
+            : isLast
+              ? 'rounded-r-control rounded-l-none'
+              : 'rounded-none'
         return cloneElement(child, {
           key: index,
-          className: cn(child.props.className, positionClass, 'shadow-none', !isFirst && 'border-l-0', fullWidth && 'flex-1'),
+          className: cn(
+            child.props.className,
+            positionClass,
+            'shadow-none',
+            !isFirst && (vertical ? 'border-t-0' : 'border-l-0'),
+            vertical ? 'w-full' : fullWidth && 'flex-1',
+          ),
         })
       })}
     </View>

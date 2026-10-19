@@ -153,6 +153,106 @@ describe('ButtonGroup: modo grupo', () => {
   })
 })
 
+describe('ButtonGroup: orientation', () => {
+  const classes = (no: { props: Record<string, unknown> }) => String(no.props.className).split(' ')
+
+  it('horizontal explícito é igual ao padrão: contêiner flex-row e filhos com a lista de hoje', async () => {
+    const montar = (orientation?: 'horizontal') => (
+      <BrandProvider>
+        <ButtonGroup accessibilityLabel="Ações" fullWidth orientation={orientation}>
+          <Button onPress={() => {}}>Editar</Button>
+          <Button onPress={() => {}}>Excluir</Button>
+        </ButtonGroup>
+      </BrandProvider>
+    )
+    const padrao = await render(montar())
+    const filhosPadrao = (await padrao.findAllByRole('button')).map(classes)
+    const contPadrao = classes(nodesWithCode(padrao.container, 'BTNG-001')[0]!)
+    await padrao.unmount()
+    const explicito = await render(montar('horizontal'))
+    expect((await explicito.findAllByRole('button')).map(classes)).toEqual(filhosPadrao)
+    expect(classes(nodesWithCode(explicito.container, 'BTNG-001')[0]!)).toEqual(contPadrao)
+    expect(contPadrao).toContain('flex-row')
+    expect(contPadrao).not.toContain('flex-col')
+  })
+
+  it('vertical, modo grupo: flex-col, cantos de cima e de baixo, border-t-0 e w-full sem flex-1', async () => {
+    const { findAllByRole, container } = await render(
+      <BrandProvider>
+        <ButtonGroup accessibilityLabel="Ações" orientation="vertical" fullWidth>
+          <Button onPress={() => {}}>Editar</Button>
+          <Button onPress={() => {}}>Duplicar</Button>
+          <Button onPress={() => {}}>Excluir</Button>
+        </ButtonGroup>
+      </BrandProvider>,
+    )
+    const cont = classes(nodesWithCode(container, 'BTNG-001')[0]!)
+    expect(cont).toContain('flex-col')
+    expect(cont).not.toContain('flex-row')
+    const [primeiro, meio, ultimo] = (await findAllByRole('button')).map(classes) as [string[], string[], string[]]
+    expect(primeiro).toEqual(expect.arrayContaining(['rounded-t-control', 'rounded-b-none', 'w-full']))
+    expect(primeiro).not.toContain('border-t-0')
+    expect(meio).toEqual(expect.arrayContaining(['rounded-none', 'border-t-0', 'w-full']))
+    expect(ultimo).toEqual(expect.arrayContaining(['rounded-b-control', 'rounded-t-none', 'border-t-0', 'w-full']))
+    for (const filho of [primeiro, meio, ultimo]) {
+      expect(filho).not.toContain('flex-1')
+      expect(filho).not.toContain('border-l-0')
+    }
+  })
+
+  it('vertical com um filho só: cantos inteiros e nada que esmague a altura (sem flex-1)', async () => {
+    const { findAllByRole } = await render(
+      <BrandProvider>
+        <ButtonGroup accessibilityLabel="Ações" orientation="vertical" fullWidth>
+          <Button onPress={() => {}}>Editar</Button>
+        </ButtonGroup>
+      </BrandProvider>,
+    )
+    const unico = classes((await findAllByRole('button'))[0]!)
+    expect(unico).toContain('rounded-control')
+    expect(unico).not.toContain('flex-1')
+    expect(unico).not.toContain('rounded-b-none')
+  })
+
+  it('vertical, modo segmentado: contêiner flex-col sem flex-wrap, opções w-full sem flex-1 e as duas classes de sombra desde o primeiro render', async () => {
+    const { findByRole, container } = await render(
+      <BrandProvider>
+        <ButtonGroup options={options} value="dia" onChange={() => {}} orientation="vertical" accessibilityLabel="Período" />
+      </BrandProvider>,
+    )
+    const cont = classes(nodesWithCode(container, 'BTNG-001')[0]!)
+    expect(cont).toContain('flex-col')
+    expect(cont).not.toContain('flex-row')
+    expect(cont).not.toContain('flex-wrap')
+    const dia = classes(await findByRole('radio', { name: 'Dia' }))
+    const semana = classes(await findByRole('radio', { name: 'Semana' }))
+    for (const opcao of [dia, semana]) {
+      expect(opcao).toContain('w-full')
+      expect(opcao).not.toContain('flex-1')
+    }
+    expect(dia).toContain('shadow-sm')
+    expect(semana).toContain('shadow-none')
+  })
+
+  it('vertical: onChange e a seleção seguem iguais (valor mudado e estado marcado visíveis)', async () => {
+    const onChange = jest.fn()
+    const { findByRole, rerender } = await render(
+      <BrandProvider>
+        <ButtonGroup options={options} value="dia" onChange={onChange} orientation="vertical" />
+      </BrandProvider>,
+    )
+    expect((await findByRole('radio', { name: 'Dia' })).props.accessibilityState.checked).toBe(true)
+    await fireEvent.press(await findByRole('radio', { name: 'Semana' }))
+    expect(onChange).toHaveBeenCalledWith('semana')
+    await rerender(
+      <BrandProvider>
+        <ButtonGroup options={options} value="semana" onChange={onChange} orientation="vertical" />
+      </BrandProvider>,
+    )
+    expect((await findByRole('radio', { name: 'Semana' })).props.accessibilityState.checked).toBe(true)
+  })
+})
+
 describe('ButtonGroup: data-rendra (item D12 do levantamento da Sincronizacao 1)', () => {
   it('carrega dataSet.rendra = BTNG-001 com options', async () => {
     const { container } = await render(

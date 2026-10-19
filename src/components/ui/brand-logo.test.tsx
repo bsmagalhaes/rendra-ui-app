@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { BrandContext, BrandProvider, useBrand } from '../../brand'
 import type { BrandContextValue } from '../../brand'
 import { brandConfigs } from '../../brand/brand.config'
+import { models } from '../../theme/models'
 import { nodesWithCode } from '../../test-utils/rendra-code'
 import { BrandLogo, tileBgClass, tileColorClass } from './brand-logo'
 
@@ -119,5 +120,84 @@ describe('BrandLogo', () => {
   it('carrega dataSet.rendra = LOGO-001 na raiz (item D12 do levantamento da Sincronizacao 1)', async () => {
     const { container } = await render(<BrandProvider><BrandLogo /></BrandProvider>)
     expect(nodesWithCode(container, 'LOGO-001')).toHaveLength(1)
+  })
+
+  describe('arte oficial (logoMode "image" com brand.logo)', () => {
+    // Logotipos falsos recebem as props de verdade (className, preserveAspectRatio, acessibilidade).
+    const logoClaro = jest.fn((_props: Record<string, unknown>) => null)
+    const logoEscuro = jest.fn((_props: Record<string, unknown>) => null)
+    const comArte = (extra: Partial<BrandContextValue> = {}, brand: Record<string, unknown> = {}) =>
+      ({
+        brand: { ...brandConfigs.T1, logoMode: 'image', logo: { light: logoClaro, dark: logoEscuro }, ...brand },
+        model: models.T1,
+        resolvedMode: 'light',
+        sidebarLogoVariant: 'dark',
+        ...extra,
+      }) as unknown as BrandContextValue
+    const montar = (value: BrandContextValue, props: Parameters<typeof BrandLogo>[0] = {}) =>
+      render(
+        <BrandContext.Provider value={value}>
+          <BrandLogo {...props} />
+        </BrandContext.Provider>,
+      )
+    beforeEach(() => {
+      logoClaro.mockClear()
+      logoEscuro.mockClear()
+    })
+
+    it('modo claro, sobre a superfície: desenha a arte "light", como imagem com o nome do produto', async () => {
+      const { findByRole } = await montar(comArte(), { on: 'surface' })
+      expect(await findByRole('img', { name: brandConfigs.T1.productName })).toBeTruthy()
+      expect(logoClaro).toHaveBeenCalled()
+      expect(logoEscuro).not.toHaveBeenCalled()
+    })
+
+    it('modo escuro: desenha a arte "dark"', async () => {
+      await montar(comArte({ resolvedMode: 'dark' }), { on: 'surface' })
+      expect(logoEscuro).toHaveBeenCalled()
+      expect(logoClaro).not.toHaveBeenCalled()
+    })
+
+    it('on="brand" (sobre o degradê) usa sempre a "dark", mesmo no modo claro', async () => {
+      await montar(comArte(), { on: 'brand' })
+      expect(logoEscuro).toHaveBeenCalled()
+      expect(logoClaro).not.toHaveBeenCalled()
+    })
+
+    it('on="sidebar" segue sidebarLogoVariant', async () => {
+      await montar(comArte({ sidebarLogoVariant: 'light' } as Partial<BrandContextValue>), { on: 'sidebar' })
+      expect(logoClaro).toHaveBeenCalled()
+      expect(logoEscuro).not.toHaveBeenCalled()
+    })
+
+    it('o tamanho vem de classe da escala (h-8 w-24) e de preserveAspectRatio, nunca de style', async () => {
+      await montar(comArte())
+      const props = logoClaro.mock.calls[0]![0] as { className?: string; style?: unknown; preserveAspectRatio?: string }
+      expect(props.className?.split(' ')).toEqual(expect.arrayContaining(['h-8', 'w-24']))
+      expect(props.preserveAspectRatio).toBe('xMinYMid meet')
+      expect(props.style).toBeUndefined()
+    })
+
+    it('carrega o código LOGO-001 uma vez só', async () => {
+      const { container } = await montar(comArte())
+      expect(nodesWithCode(container, 'LOGO-001')).toHaveLength(1)
+    })
+
+    it('symbolOnly cai no desenho atual (selo), sem a arte oficial', async () => {
+      const { findByRole } = await montar(comArte(), { symbolOnly: true })
+      expect(await findByRole('img', { name: brandConfigs.T1.productName })).toBeTruthy()
+      expect(logoClaro).not.toHaveBeenCalled()
+      expect(logoEscuro).not.toHaveBeenCalled()
+    })
+
+    it('logoMode "themed" ou sem brand.logo mantém o desenho atual (selo e palavra)', async () => {
+      const themed = await montar(comArte({}, { logoMode: 'themed' }))
+      expect(themed.queryByRole('img')).toBeNull()
+      expect(logoClaro).not.toHaveBeenCalled()
+      await themed.unmount()
+      const semLogo = await montar(comArte({}, { logo: undefined }))
+      expect(semLogo.queryByRole('img')).toBeNull()
+      expect(logoClaro).not.toHaveBeenCalled()
+    })
   })
 })

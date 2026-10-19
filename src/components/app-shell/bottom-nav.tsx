@@ -2,11 +2,17 @@ import { useEffect, useState } from 'react'
 import { Keyboard, Platform, Pressable, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Menu } from 'lucide-react-native'
+import Svg from 'react-native-svg'
+import { cssInterop } from 'nativewind'
 import { Text } from '../internal/text'
+import { useBrand } from '../../brand/use-brand'
 import { cn } from '../../lib/cn'
 import { ShellLink } from './shell-link'
 import { useShell } from './shell-context'
 import type { NavItem } from './types'
+
+// O símbolo da marca é um Svg: só resolve `currentColor` pelo próprio `style.color` (mesmo precedente de brand-logo.tsx).
+cssInterop(Svg, { className: 'style' })
 
 /**
  * Barra inferior: até 4 atalhos e, no centro, o botão redondo do menu, subindo metade acima da
@@ -18,7 +24,8 @@ import type { NavItem } from './types'
  */
 export function BottomNav() {
   const insets = useSafeAreaInsets()
-  const { bottomNavItems, activeTo, setMobileNavOpen } = useShell()
+  const { bottomNavItems, activeTo, setMobileNavOpen, centerButton } = useShell()
+  const { brand } = useBrand()
   const [tecladoAberto, setTecladoAberto] = useState(false)
 
   useEffect(() => {
@@ -55,6 +62,19 @@ export function BottomNav() {
     )
   }
 
+  // Ícone do botão central: o símbolo da marca, um ícone próprio ou, sem nada (ou sem símbolo), o menu.
+  const classeIcone = 'size-icon-lg text-primary-foreground'
+  const iconeCentral = centerButton?.icon
+  const Simbolo = brand.symbol
+  const Proprio = iconeCentral && iconeCentral !== 'brand-symbol' ? iconeCentral : null
+  const iconeDoCentro = Proprio ? (
+    <Proprio className={classeIcone} />
+  ) : iconeCentral === 'brand-symbol' && Simbolo ? (
+    <Simbolo className={classeIcone} />
+  ) : (
+    <Menu className={classeIcone} />
+  )
+
   const metade = Math.ceil(bottomNavItems.length / 2)
 
   return (
@@ -68,11 +88,11 @@ export function BottomNav() {
       <View className="flex-1 items-center">
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Abrir menu"
+          accessibilityLabel={centerButton?.accessibilityLabel ?? 'Abrir menu'}
           onPress={() => setMobileNavOpen(true)}
           className="-mt-6 mb-1 size-12 items-center justify-center rounded-full border-4 border-card bg-primary shadow-md"
         >
-          <Menu className="size-icon-lg text-primary-foreground" />
+          {iconeDoCentro}
         </Pressable>
       </View>
       {bottomNavItems.slice(metade).map(item)}

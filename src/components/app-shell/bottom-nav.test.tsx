@@ -5,8 +5,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { BrandProvider } from '../../brand/brand-provider'
 import { RendraNavigationProvider, type RendraNavigationValue } from '../../navigation/rendra-navigation'
 import { IconStub, navComPagina } from '../../test-utils/shell-fixtures'
+import type { BrandConfig } from '../../brand/types'
 import { BottomNav } from './bottom-nav'
-import { ShellProvider, useShell } from './shell-context'
+import { ShellProvider, useShell, type ShellProviderProps } from './shell-context'
 import type { NavGroup } from './types'
 
 function SondaMenu() {
@@ -132,5 +133,74 @@ describe('BottomNav', () => {
     const inativo = await tela.findByText('Início')
     expect(ativo.props.className.split(' ')).toContain('text-primary-text')
     expect(inativo.props.className.split(' ')).toContain('text-muted-foreground')
+  })
+})
+
+describe('BottomNav: botão central configurável (centerButton)', () => {
+  const classesDe = (no: { props: Record<string, unknown> }) => String(no.props.className ?? '').split(' ')
+  const IconePropio = jest.fn((props: { className?: string }) => <Text testID="icone-proprio" className={props.className} />)
+  const SimboloFalso = jest.fn((props: { className?: string }) => <Text testID="simbolo-falso" className={props.className} />)
+  const marcaComSimbolo: Partial<Record<'T1', BrandConfig>> = {
+    T1: {
+      id: 'teste',
+      productName: 'Teste',
+      companyName: 'Teste',
+      tagline: 'x',
+      shape: 'square',
+      sidebarLogo: 'dark',
+      symbol: SimboloFalso as unknown as BrandConfig['symbol'],
+    },
+  }
+
+  function montarCom(shell: Partial<ShellProviderProps>, comSimbolo = false) {
+    return render(
+      <BrandProvider brands={comSimbolo ? marcaComSimbolo : undefined}>
+        <RendraNavigationProvider value={{ navigate: jest.fn(), currentPath: '/paginas' }}>
+          <ShellProvider navigation={navComPagina} {...shell}>
+            <BottomNav />
+            <SondaMenu />
+          </ShellProvider>
+        </RendraNavigationProvider>
+      </BrandProvider>,
+    )
+  }
+
+  beforeEach(() => {
+    IconePropio.mockClear()
+    SimboloFalso.mockClear()
+  })
+
+  it('accessibilityLabel próprio troca "Abrir menu" e o botão continua abrindo o menu', async () => {
+    const tela = await montarCom({ centerButton: { accessibilityLabel: 'Atalhos' } })
+    expect(tela.queryByRole('button', { name: 'Abrir menu' })).toBeNull()
+    await fireEvent.press(await tela.findByRole('button', { name: 'Atalhos' }))
+    expect((await tela.findByTestId('menu-aberto')).props.children).toBe('true')
+  })
+
+  it('ícone próprio é o desenhado, com size-icon-lg e text-primary-foreground', async () => {
+    const tela = await montarCom({ centerButton: { icon: IconePropio } })
+    const icone = await tela.findByTestId('icone-proprio')
+    expect(classesDe(icone)).toEqual(expect.arrayContaining(['size-icon-lg', 'text-primary-foreground']))
+    // continua com o rótulo de sempre quando só o ícone muda
+    expect(await tela.findByRole('button', { name: 'Abrir menu' })).toBeTruthy()
+  })
+
+  it('icon "brand-symbol" desenha o símbolo da marca, tingido de text-primary-foreground', async () => {
+    const tela = await montarCom({ centerButton: { icon: 'brand-symbol' } }, true)
+    const simbolo = await tela.findByTestId('simbolo-falso')
+    expect(classesDe(simbolo)).toEqual(expect.arrayContaining(['size-icon-lg', 'text-primary-foreground']))
+  })
+
+  it('icon "brand-symbol" sem brand.symbol cai no ícone de menu de sempre', async () => {
+    const tela = await montarCom({ centerButton: { icon: 'brand-symbol' } })
+    expect(await tela.findByRole('button', { name: 'Abrir menu' })).toBeTruthy()
+    expect(SimboloFalso).not.toHaveBeenCalled()
+    expect(IconePropio).not.toHaveBeenCalled()
+  })
+
+  it('sem centerButton, nada muda: "Abrir menu" e nenhum ícone próprio', async () => {
+    const tela = await montarCom({})
+    expect(await tela.findByRole('button', { name: 'Abrir menu' })).toBeTruthy()
+    expect(IconePropio).not.toHaveBeenCalled()
   })
 })

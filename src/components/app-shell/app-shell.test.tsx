@@ -134,3 +134,19 @@ describe('AppShell: teclado', () => {
     }
   })
 })
+
+describe('AppShell: workspaces, centerButton e headerLogo chegam à tela pelas props', () => {
+  it('workspaces vai ao menu do usuário e centerButton ao botão central', async () => {
+    const onSelect = jest.fn()
+    const tela = await render(
+      arvore('/paginas', {
+        workspaces: { items: [{ id: 'a', label: 'Matriz' }], activeId: 'a', onSelect },
+        centerButton: { accessibilityLabel: 'Atalhos' },
+      }),
+    )
+    expect(await tela.findByRole('button', { name: 'Atalhos' })).toBeTruthy()
+    await fireEvent.press(await tela.findByRole('button', { name: 'Menu de Ana Ribeiro' }))
+    await fireEvent.press(await tela.findByRole('menuitem', { name: 'Matriz' }))
+    expect(onSelect).toHaveBeenCalledWith('a')
+  })
+})

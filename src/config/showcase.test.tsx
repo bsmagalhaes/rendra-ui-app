@@ -128,6 +128,16 @@ describe('showcaseGroups', () => {
     expect(screen.getAllByText('2').length).toBeGreaterThan(0)
   })
 
+  it('o exemplo do Wizard tem "Pular" no menu "Mais ações": avança sem validar a etapa e avisa em toast', async () => {
+    const entrada = showcaseGroups.flatMap((g) => g.entries).find((e) => e.name === 'Wizard')!
+    await render(<BrandProvider>{entrada.render()}</BrandProvider>)
+    expect(screen.getByText(/Etapa 1 de/)).toBeTruthy()
+    await fireEvent.press(screen.getByLabelText('Mais ações'))
+    await fireEvent.press(await screen.findByText('Pular'))
+    // A etapa 1 exige o nome da empresa; pular passa sem preencher.
+    expect(await screen.findByText(/Etapa 2 de/)).toBeTruthy()
+  })
+
   it.each(['acoes', 'layout', 'feedback', 'formulario', 'exibicao', 'dados', 'planejamento'])(
     'toda entrada de %s renderiza sem lançar',
     async (slug) => {

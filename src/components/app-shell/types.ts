@@ -42,6 +42,31 @@ export interface ShellMenuItem {
   icon?: NavIcon
 }
 
+/**
+ * Botão redondo do centro da barra inferior. Sem a prop, é o ícone de menu com o rótulo "Abrir
+ * menu". `icon: 'brand-symbol'` desenha o símbolo da marca (`BrandConfig.symbol`; sem símbolo,
+ * cai no ícone de menu); um componente de ícone (como os do `lucide-react-native`) desenha esse
+ * ícone. O botão do cabeçalho (sem barra inferior) não muda.
+ */
+export interface ShellCenterButton {
+  icon?: 'brand-symbol' | NavIcon
+  /** Rótulo acessível do botão. Padrão "Abrir menu". */
+  accessibilityLabel?: string
+}
+
+/**
+ * Seletor de espaço (empresa, filial, workspace) no topo do menu do usuário: um item por espaço,
+ * com o ativo marcado. Só aparece quando há `user` (o menu do usuário é o gatilho). Tocar num
+ * espaço, inclusive no ativo, chama `onSelect(id)` e fecha o menu.
+ */
+export interface ShellWorkspaces {
+  items: { id: string; label: string }[]
+  activeId: string
+  onSelect: (id: string) => void
+  /** Rótulo do grupo no menu. Padrão "Espaço". */
+  label?: string
+}
+
 /** Notificação do sino do cabeçalho. */
 export interface ShellNotificationItem {
   id: string

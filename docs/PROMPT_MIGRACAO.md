@@ -59,6 +59,7 @@ Quando a estrutura do app-alvo não recebe o pacote (Expo antigo sem NativeWind,
    - `babel.config.js`: troque o preset `babel-preset-expo` por `module:@react-native/babel-preset`, mantendo `nativewind/babel` e `jsxImportSource: 'nativewind'`.
    - `metro.config.js`: troque `require('expo/metro-config')` por `require('@react-native/metro-config')` (mesmo `getDefaultConfig`), com `withNativeWind` por cima do resultado, do jeito que este repositório já faz.
    - `jest.config.js`: troque `preset: 'jest-expo'` por `preset: 'react-native'`, mantendo `jest.setup.js` e o mapeamento de CSS iguais.
+   - `jest.config.js`, ainda: o `transformIgnorePatterns` do preset precisa deixar `@rendra-ui/.*` passar pelo Babel (some `|@rendra-ui/.*` ao fim do grupo do primeiro padrão); sem isso, sob Jest, o `dist-lib` executa `useAnimatedStyle` sem dependências e dá o erro "useAnimatedStyle was used without a dependency array". O Metro não precisa disso. Exemplo completo em `docs/COMO_APLICAR.md`.
 4. Ajuste `check:rules` ao `app/` do destino (o `checkClaudeMd` compara com um arquivo de referência que não existe no destino; torne essa checagem opcional ou remova essa regra específica no destino).
 5. Convivência com estilos antigos: a escala do Tailwind deste repositório é zerada (`theme` sem `extend`), então classes como `p-5` ou `bg-blue-500` deixam de existir; migre gradualmente ou mantenha uma segunda config temporária.
 6. Verificação completa (`typecheck`, `lint`, `check:rules` ajustado, testes) a cada arquivo migrado.

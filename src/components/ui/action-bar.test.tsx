@@ -75,6 +75,207 @@ describe('ActionBar: layout de colunas', () => {
   })
 })
 
+describe('ActionBar: secondary com visible', () => {
+  type No = { parent: No | null; props: Record<string, unknown> }
+  // Mesma subida dos testes de cima: texto > View da linha > Animated.View > Pressable (o root).
+  const classesDoBotao = (texto: No) => String(texto.parent?.parent?.parent?.props.className ?? '').split(' ')
+
+  it('uma ação visible vira botão com o rótulo e, sem ação oculta, não cria o menu "Mais ações"', async () => {
+    const { findByText, queryByLabelText } = await render(
+      <BrandProvider>
+        <ActionBar
+          primary={{ label: 'Salvar', onPress: () => {} }}
+          secondary={[{ label: 'Rascunho', onPress: () => {}, visible: true }]}
+          sticky={false}
+        />
+      </BrandProvider>,
+    )
+    expect(await findByText('Rascunho')).toBeTruthy()
+    expect(queryByLabelText('Mais ações')).toBeNull()
+  })
+
+  it('uma visible e uma oculta: botão da visible, menu só com a oculta', async () => {
+    const { findByText, findByLabelText, queryByText } = await render(
+      <BrandProvider>
+        <ActionBar
+          primary={{ label: 'Salvar', onPress: () => {} }}
+          secondary={[
+            { label: 'Rascunho', onPress: () => {}, visible: true },
+            { label: 'Duplicar', onPress: () => {} },
+          ]}
+          sticky={false}
+        />
+      </BrandProvider>,
+    )
+    expect(await findByText('Rascunho')).toBeTruthy()
+    expect(queryByText('Duplicar')).toBeNull()
+    await fireEvent.press(await findByLabelText('Mais ações'))
+    expect(await findByText('Duplicar')).toBeTruthy()
+    expect(queryByText('Rascunho', { exact: true })).toBeTruthy()
+  })
+
+  it('o onPress da visible é chamado ao toque', async () => {
+    const onPress = jest.fn()
+    const { findByText } = await render(
+      <BrandProvider>
+        <ActionBar
+          primary={{ label: 'Salvar', onPress: () => {} }}
+          secondary={[{ label: 'Rascunho', onPress, visible: true }]}
+          sticky={false}
+        />
+      </BrandProvider>,
+    )
+    await fireEvent.press(await findByText('Rascunho'))
+    expect(onPress).toHaveBeenCalledTimes(1)
+  })
+
+  it('visible desabilitada não dispara onPress', async () => {
+    const onPress = jest.fn()
+    const { findByText } = await render(
+      <BrandProvider>
+        <ActionBar
+          primary={{ label: 'Salvar', onPress: () => {} }}
+          secondary={[{ label: 'Rascunho', onPress, visible: true, disabled: true }]}
+          sticky={false}
+        />
+      </BrandProvider>,
+    )
+    await fireEvent.press(await findByText('Rascunho'))
+    expect(onPress).not.toHaveBeenCalled()
+  })
+
+  it('cancel + visible + primary: flex-3, flex-3 e flex-7, sem espaçador', async () => {
+    const { findByText, queryByLabelText } = await render(
+      <BrandProvider>
+        <ActionBar
+          primary={{ label: 'Salvar', onPress: () => {} }}
+          cancel={{ label: 'Cancelar', onPress: () => {} }}
+          secondary={[{ label: 'Rascunho', onPress: () => {}, visible: true }]}
+          sticky={false}
+        />
+      </BrandProvider>,
+    )
+    expect(classesDoBotao(await findByText('Cancelar'))).toContain('flex-3')
+    expect(classesDoBotao(await findByText('Rascunho'))).toContain('flex-3')
+    expect(classesDoBotao(await findByText('Salvar'))).toContain('flex-7')
+    expect(queryByLabelText('Mais ações')).toBeNull()
+  })
+
+  it('com os três botões de texto, cancel e visible apertam o respiro lateral (px-2) para caber em 360 px; com dois botões, cancel segue como sempre', async () => {
+    const tres = await render(
+      <BrandProvider>
+        <ActionBar
+          primary={{ label: 'Salvar', onPress: () => {} }}
+          cancel={{ label: 'Cancelar', onPress: () => {} }}
+          secondary={[{ label: 'Rascunho', onPress: () => {}, visible: true }]}
+          sticky={false}
+        />
+      </BrandProvider>,
+    )
+    expect(classesDoBotao(await tres.findByText('Cancelar'))).toContain('px-2')
+    expect(classesDoBotao(await tres.findByText('Rascunho'))).toContain('px-2')
+    expect(classesDoBotao(await tres.findByText('Salvar'))).not.toContain('px-2')
+    await tres.unmount()
+    const dois = await render(
+      <BrandProvider>
+        <ActionBar primary={{ label: 'Salvar', onPress: () => {} }} cancel={{ label: 'Cancelar', onPress: () => {} }} sticky={false} />
+      </BrandProvider>,
+    )
+    expect(classesDoBotao(await dois.findByText('Cancelar'))).not.toContain('px-2')
+  })
+
+  it('só visible + primary: visible flex-3, primary flex-7, sem espaçador do menu', async () => {
+    const { findByText, toJSON } = await render(
+      <BrandProvider>
+        <ActionBar
+          primary={{ label: 'Salvar', onPress: () => {} }}
+          secondary={[{ label: 'Rascunho', onPress: () => {}, visible: true }]}
+          sticky={false}
+        />
+      </BrandProvider>,
+    )
+    expect(classesDoBotao(await findByText('Rascunho'))).toContain('flex-3')
+    expect(classesDoBotao(await findByText('Salvar'))).toContain('flex-7')
+    // o espaçador é uma View cujo className é exatamente 'flex-3'; os botões têm mais classes
+    const arvore = JSON.stringify(toJSON())
+    expect(arvore).toContain('flex-7')
+    expect(arvore).not.toContain('"className":"flex-3"')
+  })
+
+  it('com menu, no máximo 2 botões de texto: cancel + visible + ação oculta leva a visible ao menu, na ordem', async () => {
+    const { findByText, findByLabelText, queryByText } = await render(
+      <BrandProvider>
+        <ActionBar
+          primary={{ label: 'Salvar', onPress: () => {} }}
+          cancel={{ label: 'Cancelar', onPress: () => {} }}
+          secondary={[
+            { label: 'Rascunho', onPress: () => {}, visible: true },
+            { label: 'Duplicar', onPress: () => {} },
+          ]}
+          sticky={false}
+        />
+      </BrandProvider>,
+    )
+    expect(queryByText('Rascunho')).toBeNull()
+    await fireEvent.press(await findByLabelText('Mais ações'))
+    expect(await findByText('Rascunho')).toBeTruthy()
+    expect(await findByText('Duplicar')).toBeTruthy()
+  })
+
+  it('cancel + duas visible: nenhuma fica visível (haveria menu), as duas vão ao menu', async () => {
+    const { findByText, findByLabelText, queryByText } = await render(
+      <BrandProvider>
+        <ActionBar
+          primary={{ label: 'Salvar', onPress: () => {} }}
+          cancel={{ label: 'Cancelar', onPress: () => {} }}
+          secondary={[
+            { label: 'Rascunho', onPress: () => {}, visible: true },
+            { label: 'Revisar', onPress: () => {}, visible: true },
+          ]}
+          sticky={false}
+        />
+      </BrandProvider>,
+    )
+    expect(queryByText('Rascunho')).toBeNull()
+    await fireEvent.press(await findByLabelText('Mais ações'))
+    expect(await findByText('Rascunho')).toBeTruthy()
+    expect(await findByText('Revisar')).toBeTruthy()
+  })
+
+  it('sem cancel, a primeira visible fica visível e a segunda vai ao menu (2 botões de texto + menu)', async () => {
+    const { findByText, findByLabelText, queryByText } = await render(
+      <BrandProvider>
+        <ActionBar
+          primary={{ label: 'Salvar', onPress: () => {} }}
+          secondary={[
+            { label: 'Rascunho', onPress: () => {}, visible: true },
+            { label: 'Revisar', onPress: () => {}, visible: true },
+          ]}
+          sticky={false}
+        />
+      </BrandProvider>,
+    )
+    expect(await findByText('Rascunho')).toBeTruthy()
+    expect(queryByText('Revisar')).toBeNull()
+    await fireEvent.press(await findByLabelText('Mais ações'))
+    expect(await findByText('Revisar')).toBeTruthy()
+  })
+
+  it('visible destructive usa a variante destrutiva do botão', async () => {
+    const { findByText } = await render(
+      <BrandProvider>
+        <ActionBar
+          primary={{ label: 'Salvar', onPress: () => {} }}
+          secondary={[{ label: 'Excluir', onPress: () => {}, visible: true, destructive: true }]}
+          sticky={false}
+        />
+      </BrandProvider>,
+    )
+    const classes = classesDoBotao(await findByText('Excluir')).join(' ')
+    expect(classes).toMatch(/destructive/)
+  })
+})
+
 describe('ActionBar: safe area inferior (pendência 4)', () => {
   it('paddingBottom = insets.bottom quando maior que 16', async () => {
     jest.spyOn(SafeAreaContext, 'useSafeAreaInsets').mockReturnValue({ top: 0, bottom: 34, left: 0, right: 0 })
