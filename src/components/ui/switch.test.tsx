@@ -68,6 +68,19 @@ describe('Switch', () => {
     })
   })
 
+  it('estrutura do polegar: o nó animado leva só testID e style; as classes vivem no View filho (web perde className no Animated.View)', async () => {
+    const { findByTestId } = await render(
+      <BrandProvider>
+        <Switch id="estrutura" checked accessibilityLabel="Notificações" onCheckedChange={() => {}} />
+      </BrandProvider>,
+    )
+    const animado = await findByTestId('estrutura-thumb')
+    expect(animado.props.className).toBeUndefined()
+    const filho = animado.children[0] as unknown as { props: { className?: string } }
+    const classes = String(filho.props.className ?? '').split(' ')
+    expect(classes).toEqual(expect.arrayContaining(['size-icon-md', 'rounded-full', 'bg-card', 'shadow-sm']))
+  })
+
   it('com rótulo, o Pressable externo tem hitSlop de reforço', async () => {
     const { findByRole } = await render(
       <BrandProvider>

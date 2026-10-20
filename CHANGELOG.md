@@ -4,6 +4,15 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ## [Não lançado]
 
+## [1.6.1] - 19/10/2026
+
+Correção sobre a 1.6.0, sem mudança de API.
+
+### Corrigido
+
+- `Switch`: o polegar não aparecia no navegador (o `Animated.View` com `className` e `style` perdia as classes no web e saía com altura 0 e transparente); o nó animado agora leva só `testID` e `style`, e as classes do polegar vivem num `View` filho. Nativo e API inalterados.
+- Simulação dos dois leigos aprovada em 19/10/2026 (Regra um, item 7): reduzida ao delta sobre a 1.6.0, o `Switch` com o polegar visível e alternando no navegador, numa tela escrita a partir do clone (comandos, Jest e suíte inteira verdes, navegador a 390 px no claro e no escuro) e no pacote construído com o consumidor compilando, sem lacuna bloqueadora.
+
 ## [1.6.0] - 19/10/2026
 
 Versão aditiva sobre a 1.5.0: 79 códigos no catálogo (`TEXT-001`, `LINK-001` e `AUTH-001`, só do app, somam-se ao `FOL-001`) e 68 componentes de UI (`AuthScreen`, `TextLink` e `Text` passam a ser públicos). Nenhuma API pública existente foi removida, renomeada ou teve a assinatura alterada: as props novas são opcionais e, sem elas, todo componente se comporta como na 1.5.0.

@@ -47,7 +47,11 @@ export function Switch({
 
   const trackVisual = (
     <View className={cn('h-6 w-12 rounded-full border-2 border-transparent bg-input', checked && 'bg-primary')}>
-      <Animated.View testID={`${id}-thumb`} style={thumbStyle} className="size-icon-md rounded-full bg-card shadow-sm" />
+      {/* Um `Animated.View` com `className` perde as classes no web (o polegar saía 0 de altura e transparente):
+          o animado leva só `testID` e `style`, e as classes do polegar vivem num `View` filho (mesmo padrão do Button). */}
+      <Animated.View testID={`${id}-thumb`} style={thumbStyle}>
+        <View className="size-icon-md rounded-full bg-card shadow-sm" />
+      </Animated.View>
     </View>
   )
 
