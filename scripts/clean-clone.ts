@@ -73,6 +73,7 @@ export const ARQUIVOS_DA_PAGINA = [
   'docs/index.html',
   'docs/icon.svg',
   'docs/og-image.jpg',
+  'docs/videos',
   'e2e/site.spec.ts',
   'e2e/demo-subcaminho.spec.ts',
   'e2e/demo-fluxos.spec.ts',

@@ -51,6 +51,7 @@ export function stagePages({ distDir, docsDir, outDir, siteUrl, commands }: Stag
     if (!existsSync(join(docsDir, nome))) throw new Error(`docs/${nome} ausente: a página de apresentação precisa dele`)
   }
   if (!existsSync(join(docsDir, 'images'))) throw new Error('docs/images ausente: a página precisa das imagens')
+  if (!existsSync(join(docsDir, 'videos'))) throw new Error('docs/videos ausente: a página precisa do vídeo de apresentação')
   for (const nome of ['index.html', '404.html', 'sitemap.xml']) {
     if (!existsSync(join(distDir, nome))) throw new Error(`dist/${nome} ausente: rode npm run build:web antes`)
   }
@@ -59,6 +60,7 @@ export function stagePages({ distDir, docsDir, outDir, siteUrl, commands }: Stag
   mkdirSync(outDir, { recursive: true })
   for (const nome of ARQUIVOS_DA_RAIZ) cpSync(join(docsDir, nome), join(outDir, nome))
   cpSync(join(docsDir, 'images'), join(outDir, 'images'), { recursive: true })
+  cpSync(join(docsDir, 'videos'), join(outDir, 'videos'), { recursive: true })
   cpSync(distDir, join(outDir, 'demo'), { recursive: true })
 
   const basePath = new URL(siteUrl).pathname

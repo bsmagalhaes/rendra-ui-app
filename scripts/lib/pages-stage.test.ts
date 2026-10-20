@@ -30,6 +30,8 @@ function arranjo() {
   writeFileSync(join(dist, '_expo', 'app.js'), 'x')
   mkdirSync(join(docs, 'images'), { recursive: true })
   writeFileSync(join(docs, 'images', 'safira-home-mobile.webp'), 'webp')
+  mkdirSync(join(docs, 'videos'), { recursive: true })
+  writeFileSync(join(docs, 'videos', 'rendra-app-apresentacao.mp4'), 'mp4')
   for (const nome of ARQUIVOS) writeFileSync(join(docs, nome), `raiz:${nome}`)
   return { dist, docs, out: join(raiz, '.pages', 'rendra-ui-app') }
 }
@@ -48,6 +50,7 @@ describe('stagePages', () => {
     expect(readFileSync(join(a.out, 'demo', 'index.html'), 'utf8')).toBe('<html>demo</html>')
     expect(existsSync(join(a.out, 'demo', '_expo', 'app.js'))).toBe(true)
     expect(existsSync(join(a.out, 'images', 'safira-home-mobile.webp'))).toBe(true)
+    expect(readFileSync(join(a.out, 'videos', 'rendra-app-apresentacao.mp4'), 'utf8')).toBe('mp4')
   })
 
   it('o 404 da raiz é o 404 da demo com o script de desvio; o da demo fica intacto (D6)', () => {
@@ -99,6 +102,12 @@ describe('stagePages', () => {
     const a = arranjo()
     rmSync(join(a.docs, 'index.html'), {})
     expect(() => montar(a)).toThrow(/docs\/index\.html ausente/)
+  })
+
+  it('falha quando falta docs/videos', () => {
+    const a = arranjo()
+    rmSync(join(a.docs, 'videos'), { recursive: true })
+    expect(() => montar(a)).toThrow(/docs\/videos ausente/)
   })
 
   it('falha quando falta docs/images', () => {

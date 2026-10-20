@@ -163,6 +163,9 @@
   .tela-cheia { color: var(--site-primary-text); }
 
 
+  .video-apresentacao { border: 1px solid var(--site-line); border-radius: 12px; overflow: hidden; background: var(--site-bg-2); margin-top: 24px; }
+  .video-apresentacao video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; background: #000; }
+
   section + section { border-top: 1px solid var(--site-line); }
   section { padding: 72px 0; }
   .hero { border-top: 0; }
@@ -287,6 +290,20 @@
         <div id="phone-slot" class="phone-slot">
           <a class="phone-link" href="demo/"><img src="images/safira-home-mobile.webp" width="414" height="868" alt="Tela inicial do Rendra App em um celular. Abrir a demo."></a>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="apresentacao" aria-labelledby="t-apresentacao">
+    <div class="wrap">
+      <div class="eyebrow">Apresentação</div>
+      <h2 id="t-apresentacao">Rendra App em vídeo</h2>
+      <div class="video-apresentacao">
+        <video controls preload="none" playsinline poster="videos/rendra-app-apresentacao-poster.webp" width="1920" height="1080" aria-label="Vídeo de apresentação do Rendra App, com legendas em português">
+          <source src="videos/rendra-app-apresentacao.mp4" type="video/mp4">
+          <track kind="captions" src="videos/rendra-app-apresentacao.vtt" srclang="pt-BR" label="Português">
+          Seu navegador não reproduz vídeo. <a href="videos/rendra-app-apresentacao.mp4">Baixe o vídeo de apresentação</a>.
+        </video>
       </div>
     </div>
   </section>

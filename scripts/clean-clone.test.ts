@@ -121,6 +121,7 @@ describe('orchestrate (scripts/clean-clone.ts), sobre uma cópia real dos arquiv
       'docs/index.html',
       'docs/icon.svg',
       'docs/og-image.jpg',
+      'docs/videos',
       'e2e/site.spec.ts',
       'e2e/demo-subcaminho.spec.ts',
       'scripts/pages-stage.ts',
