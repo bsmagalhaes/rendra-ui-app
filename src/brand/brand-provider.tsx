@@ -9,6 +9,8 @@ import { createPalette, registerPalette, type Palette, type PaletteSeeds } from 
 import { paletteSeeds } from './palettes'
 import { buildThemeVars } from '../theme/vars'
 import { colorCodes } from '../config/presets'
+import { MotionProvider } from '../lib/motion/context'
+import type { MotionMode } from '../theme/motion'
 
 // Padrão interno mínimo (Tarefa 2.5, decisão do redator 9 do plano): quando quem consome o
 // pacote não passa `brands`, o `BrandProvider` não embarca a marca de demonstração ("Rendra",
@@ -99,6 +101,7 @@ export function BrandProvider({
   defaultPaletteId,
   defaultModelCode,
   storage,
+  motion,
 }: {
   children: ReactNode
   /** Mapa de marca por modelo (Tarefa 2.5); sem esta prop, usa o padrão interno mínimo (nome do
@@ -133,6 +136,9 @@ export function BrandProvider({
    * nasce hidratado e a escolha vale só enquanto o app está aberto. Padrão: persiste.
    */
   storage?: false
+  /** Motion experimental (opcional e aditivo). Só `'on'` envolve a árvore em `MotionProvider`; sem a
+   *  prop, ou com `'off'`, a árvore é a de sempre e um `MotionProvider` por fora continua valendo. */
+  motion?: MotionMode
 }) {
   const systemScheme = useColorScheme()
   const listaDePaletas = palettesProp ?? paletteSeeds
@@ -268,7 +274,7 @@ export function BrandProvider({
     setPaletteId, applyPalette, sidebarLogoVariant: palette.sidebarLogo, labelStyle,
   }
 
-  return (
+  const tree = (
     <BrandContext.Provider value={value}>
       <View
         testID={hydrated ? `rendra-${modelCode}-${codigoDaPaleta}` : undefined}
@@ -280,4 +286,6 @@ export function BrandProvider({
       </View>
     </BrandContext.Provider>
   )
+
+  return motion === 'on' ? <MotionProvider motion="on">{tree}</MotionProvider> : tree
 }

@@ -8,6 +8,10 @@ import { Skeleton } from './skeleton'
 import { Gradient } from '../gradient/gradient'
 import { a11yPresets } from '../../lib/a11y'
 import { cn } from '../../lib/cn'
+import { MotionCountText, MotionPresence } from '../internal/motion-view'
+import { fadeIn } from '../../lib/motion/fade'
+import { parseCountable } from '../../lib/motion/count'
+import { useMotionPreset } from '../../lib/motion/use-motion-preset'
 
 export interface StatCardProps {
   label: string
@@ -48,6 +52,23 @@ export function statCardLabel({
   return `${label}${valuePart}, ${direction} de ${amount}%`
 }
 
+/**
+ * Valor do cartão. `off`: o `Text` de sempre. `on`: conta até o valor quando ele é número ou string
+ * pt-BR com número (nativo e navegador; sem movimento reduzido); fora disso só aparece com fade.
+ */
+function StatValue({ value }: { value: ReactNode }) {
+  const { active, reduced } = useMotionPreset()
+  const text = (
+    <Text weight="semibold" className="text-2xl text-foreground">
+      {value}
+    </Text>
+  )
+  if (!active) return text
+  const countable = !reduced ? parseCountable(value) : null
+  if (countable) return <MotionCountText countable={countable} />
+  return <MotionPresence enter={fadeIn}>{text}</MotionPresence>
+}
+
 export function StatCard({
   label,
   value,
@@ -86,7 +107,7 @@ export function StatCard({
         </View>
       ) : null}
       <View className="flex-row items-start justify-between gap-3">
-        <Text className="text-sm text-muted-foreground">{label}</Text>
+        <Text className="min-w-0 flex-1 break-words text-sm text-muted-foreground">{label}</Text>
         {icon && isValidElement(icon) ? (
           <View className="size-8 shrink-0 items-center justify-center rounded-control bg-primary-soft">
             {cloneElement(icon as ReactElement<{ className?: string }>, {
@@ -106,9 +127,7 @@ export function StatCard({
         {loading ? (
           <Skeleton testID={testID ? `${testID}-skeleton-valor` : undefined} className="h-8 w-24" />
         ) : (
-          <Text weight="semibold" className="text-2xl text-foreground">
-            {value}
-          </Text>
+          <StatValue value={value} />
         )}
         {loading ? (
           <Skeleton testID={testID ? `${testID}-skeleton-variacao` : undefined} className="h-3 w-16" />

@@ -1,12 +1,17 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
+import { useDerivedValue, useSharedValue, withTiming } from 'react-native-reanimated'
 import { Text } from '../internal/text'
 import { Select } from './select'
 import { a11yPresets } from '../../lib/a11y'
 import { useControlledState } from '../../hooks/use-controlled-state'
 import { cn } from '../../lib/cn'
 import { resolveCatalogCode } from '../../catalog/components'
+import { useMotion } from '../../lib/motion/context'
+import { useMotionPreset } from '../../lib/motion/use-motion-preset'
+import { timing } from '../../lib/motion/tokens'
+import { MotionView } from '../internal/motion-view'
 
 export interface TabItem {
   value: string
@@ -72,7 +77,7 @@ function TabLabel({ item, selected = false }: { item: TabItem; selected?: boolea
   )
 }
 
-export function Tabs({
+function TabsStatic({
   items,
   value,
   defaultValue,
@@ -213,4 +218,190 @@ export function Tabs({
       </View>
     </View>
   )
+}
+
+interface TabBox {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+/**
+ * Caminho `motion="on"`: um indicador deslizante (barra na variante `line`, pílula na `pill`)
+ * medido por `onLayout` de cada aba, e o painel novo entra SEM animação (troca de aba é muito
+ * frequente: só o indicador anima). As classes de seleção da aba saem para não duplicar o
+ * indicador, mas `shadow-none` segue declarado desde o primeiro render (mesma razão da versão
+ * estática). No modo `select` (não cabe) não há indicador. Sem movimento, o indicador troca sem deslizar.
+ */
+function TabsMotion({
+  items,
+  value,
+  defaultValue,
+  onChange,
+  variant = 'line',
+  overflow = 'select',
+  accessibilityLabel,
+  className,
+  testID,
+}: TabsProps) {
+  const { reduced } = useMotionPreset()
+  const [active, setActive] = useControlledState<string>(value, defaultValue ?? items[0]?.value ?? '', onChange)
+  const [listWidth, setListWidth] = useState<number | null>(null)
+  const [containerWidth, setContainerWidth] = useState<number | null>(null)
+  const [boxes, setBoxes] = useState<Record<string, TabBox>>({})
+  const scroll = overflow === 'scroll'
+  const useSelect = !scroll && listWidth != null && containerWidth != null && listWidth > containerWidth
+  const activeItem = items.find((item) => item.value === active)
+  const code = resolveCatalogCode('Tabs', { variant })
+
+  const x = useSharedValue(0)
+  const y = useSharedValue(0)
+  const w = useSharedValue(0)
+  const h = useSharedValue(0)
+  const barY = useDerivedValue(() => y.get() + h.get() - 2)
+  const placed = useRef(false)
+  const box = boxes[active]
+
+  useEffect(() => {
+    if (!box) return
+    if (!placed.current || reduced) {
+      placed.current = true
+      x.set(box.x)
+      y.set(box.y)
+      w.set(box.width)
+      h.set(box.height)
+      return
+    }
+    // Deslocamento na tela: `move` (250 ms, `ease.move`), a mesma do indicador do web. O `withTiming`
+    // retargeta do valor atual, então trocar de aba no meio do caminho não dá salto.
+    const config = timing('move', 'move')
+    x.set(withTiming(box.x, config))
+    y.set(withTiming(box.y, config))
+    w.set(withTiming(box.width, config))
+    h.set(withTiming(box.height, config))
+  }, [box, reduced, x, y, w, h])
+
+  const lista = (
+    <View
+      accessibilityRole={a11yPresets.tablist.accessibilityRole}
+      accessibilityLabel={accessibilityLabel}
+      testID={testID ? `${testID}-lista` : undefined}
+      className={cn('relative', scroll ? scrollListClass[variant] : listClass[variant])}
+    >
+      {box ? (
+        <View className="absolute left-0 top-0" pointerEvents="none">
+          <MotionView
+            testID={testID ? `${testID}-indicador` : undefined}
+            translateX={x}
+            translateY={variant === 'line' ? barY : y}
+            width={w}
+            height={variant === 'line' ? undefined : h}
+          >
+            {variant === 'line' ? (
+              <View className="h-0.5 w-full bg-primary" />
+            ) : (
+              <View className="size-full rounded-item bg-card shadow-sm" />
+            )}
+          </MotionView>
+        </View>
+      ) : null}
+      {items.map((item) => {
+        const selected = item.value === active
+        return (
+          <Pressable
+            key={item.value}
+            testID={testID ? `${testID}-aba-${item.value}` : undefined}
+            accessibilityRole={a11yPresets.tab.accessibilityRole}
+            accessibilityState={{ selected, disabled: item.disabled }}
+            aria-selected={selected}
+            accessibilityLabel={tabAccessibilityLabel(item)}
+            disabled={item.disabled}
+            onPress={() => setActive(item.value)}
+            onLayout={(event) => {
+              const { x: bx, y: by, width, height } = event.nativeEvent.layout
+              setBoxes((prev) => {
+                const old = prev[item.value]
+                if (old && old.x === bx && old.y === by && old.width === width && old.height === height) return prev
+                return { ...prev, [item.value]: { x: bx, y: by, width, height } }
+              })
+            }}
+            className={cn(
+              'min-h-touch flex-row items-center justify-center gap-2 px-3',
+              scroll && 'shrink-0',
+              variant === 'line' ? 'border-b-2 border-transparent py-3' : 'rounded-item bg-transparent py-2 shadow-none',
+            )}
+          >
+            <TabLabel item={item} selected={selected} />
+          </Pressable>
+        )
+      })}
+    </View>
+  )
+
+  return (
+    <View className={cn('relative min-w-0 flex-col gap-6', className)} dataSet={{ rendra: code }}>
+      <View
+        testID={testID ? `${testID}-container` : undefined}
+        onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+        className="w-full"
+      >
+        {useSelect ? (
+          <Select
+            label={accessibilityLabel ?? 'Seção'}
+            options={items.map((item) => ({
+              value: item.value,
+              label: item.count ? `${item.label} (${item.count})` : item.label,
+              disabled: item.disabled,
+            }))}
+            value={active}
+            onChange={(next) => {
+              if (next) setActive(next)
+            }}
+          />
+        ) : scroll ? (
+          <View className={variant === 'line' ? 'border-b border-border' : undefined}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="min-w-full">
+              {lista}
+            </ScrollView>
+          </View>
+        ) : (
+          lista
+        )}
+      </View>
+      {!scroll && (
+        <View
+          aria-hidden
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          className="absolute inset-x-0 top-0 h-0 overflow-hidden"
+        >
+          <View
+            testID={testID ? `${testID}-medida` : undefined}
+            onLayout={(e) => setListWidth(e.nativeEvent.layout.width)}
+            className={cn('self-start flex-row', variant === 'line' ? 'gap-2' : 'gap-1 p-1')}
+          >
+            {items.map((item) => (
+              <View key={item.value} className="min-h-touch flex-row items-center justify-center gap-2 px-3">
+                <TabLabel item={item} />
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+      {/* Troca de aba é de uso muito frequente: o painel novo aparece sem entrada (só o indicador desliza). */}
+      <View role={a11yPresets.tabpanel.role} testID={testID ? `${testID}-painel` : undefined} className="min-w-0">
+        {typeof activeItem?.content === 'string' ? (
+          <Text className="text-sm text-muted-foreground">{activeItem.content}</Text>
+        ) : (
+          activeItem?.content
+        )}
+      </View>
+    </View>
+  )
+}
+
+export function Tabs(props: TabsProps) {
+  const mode = useMotion()
+  return mode === 'on' ? <TabsMotion {...props} /> : <TabsStatic {...props} />
 }

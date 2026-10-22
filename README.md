@@ -290,6 +290,10 @@ e2e/                   # Playwright (layout, acessibilidade, página de apresent
 docs/index.html        # página de apresentação (raiz do GitHub Pages), com docs/images/ e docs/og-image.jpg
 ```
 
+## Movimento
+
+O movimento é opcional e vem desligado: `BrandProvider` aceita `motion="on"` (padrão `"off"`). Os tempos, curvas, molas e escalas ficam em `motionTokens` (exportado do pacote), com os mesmos nomes do design system web, e valem nos dois modos; o `on` acrescenta a animação dos 30 componentes (toque, overlays, abas, acordeão, listas, gráficos, skeleton) e respeita "Reduzir movimento" do sistema desde o primeiro quadro. Duas telas de comparação mostram o resultado lado a lado: `/componentes-motion` e `/dashboard-motion`. Na 1.7.0 o `off` também mudou (toque, entrada de folha e gaveta, gesto de arrastar, progress): veja o `CHANGELOG.md` e o guia `docs/COMO_APLICAR.md`. Nos testes de quem liga `motion="on"` na raiz, use `jest.useFakeTimers()` ou `<MotionProvider motion="off">`.
+
 ## Como trocar a marca
 
 Trocar marca é sempre: 4 cores, degradê, modelo, nome e logotipo, nunca componente. Resumo (guia completo em `docs/COMO_APLICAR.md`):
@@ -343,3 +347,10 @@ Criado e mantido por **Bruno Magalhaes**.
 ## Créditos
 
 Construído com [Expo](https://expo.dev/), [Expo Router](https://docs.expo.dev/router/introduction/), [NativeWind](https://www.nativewind.dev/), [React Native Reanimated](https://docs.swmansion.com/react-native-reanimated/), [React Native Gesture Handler](https://docs.swmansion.com/react-native-gesture-handler/), [React Native Safe Area Context](https://github.com/th3rdwave/react-native-safe-area-context), [react-native-svg](https://github.com/software-mansion/react-native-svg), [Lucide](https://lucide.dev/), [React Hook Form](https://react-hook-form.com/), [Zod](https://zod.dev/), [IMask](https://imask.js.org/), [date-fns](https://date-fns.org/), [Jest](https://jestjs.io/), [React Native Testing Library](https://callstack.github.io/react-native-testing-library/) e [Playwright](https://playwright.dev/) (com [axe-core](https://github.com/dequelabs/axe-core)). Fontes Poppins, Inter e DM Sans, sob licença SIL Open Font License.
+
+### Ferramentas de movimento
+
+A linguagem de movimento do Rendra (tempo, curva, origem, mola e o que não anima) foi desenhada e auditada com duas skills de agente de código. Elas ficam só na máquina de quem desenvolve; o Rendra não as redistribui.
+
+- **Emil Kowalski**: as skills `emil-design-eng`, `animate`, `animate-expo`, `review-animations`, `animation-performance`, `find-animation-opportunities` e `improve-animations`, sob a licença **MIT**. Repositório de origem: [github.com/emilkowalski/skills](https://github.com/emilkowalski/skills). As regras de frequência, de assimetria entre entrada e saída, de origem do gatilho, de fricção e de velocidade no gesto, e do orçamento de tempo que o motion deste projeto segue vêm do trabalho dele.
+- **Impeccable**: a skill `impeccable` (modo Operar: `audit`, `polish`, `harden`), sob a licença **Apache 2.0**. Repositório de origem: [github.com/pbakaus/impeccable](https://github.com/pbakaus/impeccable).

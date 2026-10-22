@@ -74,6 +74,23 @@ Props opcionais do `AppShell` (todas com o padrão de sempre quando ausentes):
 - `workspaces`: `{ items: { id, label }[]; activeId; onSelect(id); label? }`, o seletor de espaço (empresa, filial) no topo do menu do usuário, com o ativo marcado. Só aparece quando há `user`.
 - `headerLogo`: um elemento (por exemplo, `<BrandLogo />`) no lugar do título no cabeçalho. O título continua lá só para o leitor de tela e o logo é decorativo para ele; a ajuda segue ao lado. Passe um elemento estável (declarado fora do componente ou memoizado). Para ter o título também no corpo da tela, use `<PageHeader bodyTitle />`.
 
+## Movimento: a opção `motion`
+
+O movimento é opcional e vem desligado. `BrandProvider` aceita `motion?: 'off' | 'on'` (padrão `'off'`):
+
+```tsx
+<BrandProvider brands={brandConfigs} motion="on">
+  <Stack />
+</BrandProvider>
+```
+
+- `'on'` liga a linguagem de movimento: toque de 120 ms sem quique, overlays (modal, gaveta, folha) por mola ou por `ease.drawer`, indicador das abas, acordeão por layout animation, brilho do skeleton, desenho dos gráficos. Respeita "Reduzir movimento" do sistema desde o primeiro quadro (só sobra a opacidade) e troca a transição de tela por `fade`.
+- `'off'` não monta nenhum caminho animado, mas **o `off` também mudou na 1.7.0** (veja o `CHANGELOG.md`): o toque do botão, a entrada da folha, da gaveta e do menu e o gesto de arrastar agora usam os mesmos tempos e curvas do `on`, e o arraste roda na UI thread.
+- `useMotion()` devolve o modo atual; `MotionProvider` liga o movimento só numa árvore (as telas `/componentes-motion` e `/dashboard-motion` fazem isso com uma chave).
+- `motionTokens` (exportado da entrada principal) guarda os tempos, curvas, molas e escalas, com os mesmos nomes do design system web. Só ganhou chaves novas: `duration.press/move`, `ease.move/drawer/back`, `spring.settle/sheet/playful` (em `duration` e `dampingRatio`), `scales` (`enter` 0,95, `small` 0,9, `press` 0,97, `pop` 0,8, `bump` 1,08) e `stagger.cap`. `scale` e `stagger.max` seguem como legado, com os valores de antes.
+- As duas telas de comparação, `/componentes-motion` (os 30 componentes com a chave ligada e desligada) e `/dashboard-motion` (entrada em cascata e contadores), ficam no menu da vitrine e servem de referência; apague-as do clone se não precisar delas.
+- Testes de quem liga `motion="on"` na raiz: use temporizadores falsos (`jest.useFakeTimers()`) ou envolva a árvore em `<MotionProvider motion="off">`, como o `modal.motion.test.tsx` do próprio repositório faz; sem isso a animação deixa temporizadores pendentes e o teste fica instável.
+
 ## Crédito "Feito com Rendra"
 
 `RendraCredit` (e o `AuthLayout`, que o traz no rodapé) vem ligado por padrão. Para tirar, `credit={false}` no `AuthLayout` ou simplesmente não renderizar o `RendraCredit`; para trocar, `creditText` e `creditHref`. O crédito na tela é opcional, mas a licença MIT continua exigindo o aviso de copyright e o arquivo `LICENSE` no código e em qualquer cópia.

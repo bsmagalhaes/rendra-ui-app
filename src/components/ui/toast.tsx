@@ -7,6 +7,9 @@ import { Text } from '../internal/text'
 import { a11yPresets } from '../../lib/a11y'
 import { cn } from '../../lib/cn'
 import { useReducedMotion } from '../../lib/reduced-motion'
+import { useMotion } from '../../lib/motion/context'
+import { slideIn, slideOut } from '../../lib/motion/slide'
+import { layoutTransition } from '../../lib/motion/layout'
 import type { FeedbackType } from '../../brand/types'
 
 export interface ToastOptions {
@@ -85,6 +88,7 @@ export function Toaster() {
   const items = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
   const insets = useSafeAreaInsets()
   const reducedMotion = useReducedMotion()
+  const motionOn = useMotion() === 'on'
 
   useEffect(() => () => dismiss(), [])
 
@@ -101,8 +105,9 @@ export function Toaster() {
       {visible.map((item) => (
         <Animated.View
           key={item.id}
-          entering={FadeInUp.duration(reducedMotion ? 0 : 200)}
-          exiting={FadeOutDown.duration(reducedMotion ? 0 : 150)}
+          entering={motionOn ? slideIn('up', reducedMotion, 0, 16) : FadeInUp.duration(reducedMotion ? 0 : 200)}
+          exiting={motionOn ? slideOut('up', reducedMotion, 16) : FadeOutDown.duration(reducedMotion ? 0 : 150)}
+          layout={motionOn ? layoutTransition() : undefined}
         >
           <View
             testID={`toast-${item.id}`}

@@ -57,6 +57,8 @@ export const ARQUIVOS_SO_DO_PACOTE = [
   'scripts/lib/verify-pack-checks.ts',
   'scripts/lib/verify-pack-checks.test.ts',
   'src/__tests__/pack-consumer.test.tsx',
+  // Lê a seção "## Créditos" do README do pacote, que o README do clone não tem.
+  'src/__tests__/creditos.test.ts',
   'src/index.ts',
   'src/index.test.ts',
   // Testes dos subcaminhos da F3: importam `./index`, que o clone não tem.

@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { BackHandler, Modal as RNModal, Pressable, ScrollView, View, useWindowDimensions } from 'react-native'
-import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler'
+import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler'
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { X } from 'lucide-react-native'
@@ -10,12 +10,16 @@ import { Button } from '../ui/button'
 import { BrandLogo } from '../ui/brand-logo'
 import { cn } from '../../lib/cn'
 import { useReducedMotion } from '../../lib/reduced-motion'
+import { useMotion } from '../../lib/motion/context'
+import { useOverlayMotion } from '../../lib/motion/use-overlay-motion'
+import { useOverlayPan } from '../../lib/motion/use-overlay-pan'
+import { timing } from '../../lib/motion/tokens'
 import { useRendraNavigation } from '../../navigation/rendra-navigation'
 import { getNavigationTargets, resolveActiveTo } from './navigation-utils'
 import { ShellLink } from './shell-link'
+import { MotionView } from '../internal/motion-view'
 import type { NavGroup, NavIcon } from './types'
 
-const DRAG_CLOSE_THRESHOLD = 100
 /** Fração da largura da janela ocupada pelo painel (a área escura ao lado fecha a gaveta). */
 const PANEL_WIDTH_RATIO = 0.8
 
@@ -139,7 +143,7 @@ export interface NavDrawerProps {
  * A posição e a largura vivem no `useAnimatedStyle` (um `Animated.View` com `className` perde
  * classes no web).
  */
-export function NavDrawer({ open, onOpenChange, navigation }: NavDrawerProps) {
+function NavDrawerStatic({ open, onOpenChange, navigation }: NavDrawerProps) {
   const insets = useSafeAreaInsets()
   const { width } = useWindowDimensions()
   const reducedMotion = useReducedMotion()
@@ -158,9 +162,10 @@ export function NavDrawer({ open, onOpenChange, navigation }: NavDrawerProps) {
     translateX.set(navDrawerTranslateX('closed', widthRef.current))
     const timer = setTimeout(() => {
       translateX.set(
-        withTiming(navDrawerTranslateX('settled', widthRef.current), {
-          duration: reducedMotionRef.current ? 0 : 250,
-        }),
+        withTiming(
+          navDrawerTranslateX('settled', widthRef.current),
+          reducedMotionRef.current ? { duration: 0 } : timing('slow', 'drawer'),
+        ),
       )
     }, 0)
     return () => clearTimeout(timer)
@@ -175,18 +180,19 @@ export function NavDrawer({ open, onOpenChange, navigation }: NavDrawerProps) {
     return () => sub.remove()
   }, [open, onOpenChange])
 
-  const gesture = Gesture.Pan()
-    .withTestId('nav-drawer-arraste')
-    .activeOffsetX(-20)
-    .failOffsetY([-15, 15])
-    .runOnJS(true)
-    .onUpdate((event) => {
-      translateX.set(Math.min(0, event.translationX))
-    })
-    .onEnd((event) => {
-      if (event.translationX < -DRAG_CLOSE_THRESHOLD) onOpenChange(false)
-      translateX.set(withTiming(0, { duration: 150 }))
-    })
+  // Mesmo gesto do caminho `on`: worklet, fricção para o lado de abrir, decisão por projeção.
+  const dismiss = useCallback(() => onOpenChange(false), [onOpenChange])
+  const gesture = useOverlayPan({
+    axis: 'x',
+    direction: -1,
+    size: panelWidth,
+    offset: translateX,
+    onDismiss: dismiss,
+    testID: 'nav-drawer-arraste',
+    activeOffsetX: 20,
+    failOffsetY: [-15, 15],
+    afterDismiss: 'return',
+  })
 
   const animated = useAnimatedStyle(() => ({
     width: panelWidth,
@@ -241,4 +247,86 @@ export function NavDrawer({ open, onOpenChange, navigation }: NavDrawerProps) {
       </GestureHandlerRootView>
     </RNModal>
   )
+}
+
+/** Caminho `motion="on"`: spring na entrada, arraste worklet para a esquerda, saída animada. */
+function NavDrawerMotion({ open, onOpenChange, navigation }: NavDrawerProps) {
+  const insets = useSafeAreaInsets()
+  const { width } = useWindowDimensions()
+  const reducedMotion = useReducedMotion()
+  const panelWidth = Math.round(width * PANEL_WIDTH_RATIO)
+  const close = useCallback(() => onOpenChange(false), [onOpenChange])
+  const { mounted, offset, backdrop, contentOpacity, gesture } = useOverlayMotion({
+    open,
+    axis: 'x',
+    direction: -1,
+    size: panelWidth,
+    reduced: reducedMotion,
+    onDismiss: close,
+    testID: 'nav-drawer-arraste',
+    activeOffsetX: 20,
+    failOffsetY: [-15, 15],
+  })
+
+  useEffect(() => {
+    if (!open) return
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      close()
+      return true
+    })
+    return () => sub.remove()
+  }, [open, close])
+
+  const animated = useAnimatedStyle(() => ({
+    width: panelWidth,
+    transform: [{ translateX: offset.get() }],
+    opacity: contentOpacity.get(),
+  }))
+
+  return (
+    <RNModal transparent animationType="none" visible={mounted} onRequestClose={close} statusBarTranslucent>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View className="flex-1 flex-row">
+          <View className="absolute inset-0" pointerEvents="none">
+            <MotionView fill opacity={backdrop} testID="nav-drawer-backdrop">
+              <View className="size-full bg-overlay" />
+            </MotionView>
+          </View>
+          <GestureDetector gesture={gesture}>
+            <Animated.View style={animated} pointerEvents={open ? 'auto' : 'none'}>
+              <View
+                role="dialog"
+                accessibilityLabel="Menu"
+                accessibilityViewIsModal
+                testID="nav-drawer-painel"
+                className="flex-1 overflow-hidden bg-sidebar"
+                style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+              >
+                <Gradient token="brand" className="absolute inset-0" />
+                <View className="h-header flex-row items-center justify-between gap-2 px-4">
+                  <BrandLogo on="sidebar" />
+                  <Button
+                    variant="ghost"
+                    iconOnly
+                    accessibilityLabel="Fechar menu"
+                    icon={<X className="text-sidebar-foreground" />}
+                    onPress={close}
+                  />
+                </View>
+                <ScrollView tabIndex={0} className="flex-1" contentContainerClassName="p-2">
+                  <NavMenuList navigation={navigation} on="sidebar" onNavigate={close} />
+                </ScrollView>
+              </View>
+            </Animated.View>
+          </GestureDetector>
+          <Pressable accessibilityRole="button" accessibilityLabel="Fechar" className="flex-1" onPress={close} />
+        </View>
+      </GestureHandlerRootView>
+    </RNModal>
+  )
+}
+
+export function NavDrawer(props: NavDrawerProps) {
+  const mode = useMotion()
+  return mode === 'on' ? <NavDrawerMotion {...props} /> : <NavDrawerStatic {...props} />
 }

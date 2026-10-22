@@ -1,11 +1,12 @@
 import { useEffect } from 'react'
 import { View } from 'react-native'
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated'
+import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated'
 import { Loader2 } from 'lucide-react-native'
 import { Text } from '../internal/text'
 import { cn } from '../../lib/cn'
 import { a11yPresets } from '../../lib/a11y'
 import { useReducedMotion } from '../../lib/reduced-motion'
+import { easings } from '../../lib/motion/tokens'
 
 /**
  * Indicador de carregamento unico do sistema (item E1 do levantamento da Sincronizacao 1).
@@ -57,7 +58,7 @@ export function Spinner({ size = 'md', label, className, testID }: SpinnerProps)
       spin.value = 0
       return
     }
-    spin.value = withRepeat(withTiming(1, { duration: 800, easing: Easing.linear }), -1, false)
+    spin.value = withRepeat(withTiming(1, { duration: 800, easing: easings.linear }), -1, false)
   }, [reduceMotion, spin])
 
   const rotationStyle = useAnimatedStyle(() => spinnerRotationStyle({ progresso: spin.value, reduceMotion }))

@@ -51,7 +51,7 @@ describe('orchestrate (scripts/clean-clone.ts), sobre uma cópia real dos arquiv
     }
     // B1 da simulação dos leigos: teste que lê `docs/index.html` some junto com a página; nenhum teste que
     // sobra no clone pode ler esse arquivo, senão o `npm test` do clone nasce vermelho.
-    for (const relativo of ['scripts/lib/site-hero-cores.test.ts', 'scripts/lib/imagens-referencias.test.ts', 'scripts/lib/f2-docs.test.ts']) {
+    for (const relativo of ['scripts/lib/site-hero-cores.test.ts', 'scripts/lib/imagens-referencias.test.ts', 'scripts/lib/f2-docs.test.ts', 'src/__tests__/creditos.test.ts']) {
       expect(existsSync(join(dir, relativo))).toBe(false)
     }
     const restantes: string[] = []

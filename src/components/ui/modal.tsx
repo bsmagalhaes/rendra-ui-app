@@ -1,14 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { BackHandler, KeyboardAvoidingView, Modal as RNModal, Pressable, View } from 'react-native'
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
+import Animated, { useAnimatedStyle, useDerivedValue, useSharedValue, withSpring, withTiming } from 'react-native-reanimated'
 import { Text } from '../internal/text'
 import { OverlayShell } from '../internal/overlay-shell'
+import { MotionView } from '../internal/motion-view'
 import { ActionBar } from './action-bar'
 import { BrandFeedbackIcon } from './brand-feedback-icon'
 import { a11yPresets } from '../../lib/a11y'
 import { cn } from '../../lib/cn'
 import { useReducedMotion } from '../../lib/reduced-motion'
+import { useMotion } from '../../lib/motion/context'
+import { usePresence } from '../../lib/motion/use-presence'
+import { openSpring, reducedTiming, timing } from '../../lib/motion/tokens'
+import { motionTokens } from '../../theme/motion'
 import type { FeedbackType } from '../../brand/types'
 import { resolveCatalogCode } from '../../catalog/components'
 
@@ -50,7 +55,7 @@ export function modalCardStyle(phase: 'closed' | 'settled'): { translateY: numbe
   return phase === 'settled' ? { translateY: 0, opacity: 1 } : { translateY: 24, opacity: 0 }
 }
 
-export function Modal({
+function ModalStatic({
   open,
   onOpenChange,
   title,
@@ -202,10 +207,10 @@ export function Modal({
               ) : (
                 <View className="items-center justify-center gap-4">
                   <BrandFeedbackIcon type={feedbackByType[type]} size="2xl" animated />
-                  <Text weight="semibold" className="text-center text-lg text-foreground">
+                  <Text weight="semibold" className="max-w-full break-words text-center text-lg text-foreground">
                     {title}
                   </Text>
-                  {description && <Text className="text-center text-sm text-muted-foreground">{description}</Text>}
+                  {description && <Text className="max-w-full break-words text-center text-sm text-muted-foreground">{description}</Text>}
                   {children}
                 </View>
               )}
@@ -215,4 +220,161 @@ export function Modal({
       </Body>
     </RNModal>
   )
+}
+
+/**
+ * Caminho `motion="on"`: o cartão entra por mola criticamente amortecida (sem quique) a partir de
+ * 0,95 e 8 px, com opacidade em `base`; sai mais rápido (`fast`) e só em opacidade, porque o usuário
+ * já decidiu fechar. O `progress` (0 a 1) guia deslocamento e escala; o `RNModal` só desmonta ao fim da
+ * saída (`usePresence`). Sem arraste (A-P3). Com movimento reduzido, só opacidade em `base`.
+ */
+function ModalMotion({
+  open,
+  onOpenChange,
+  title,
+  description,
+  type = 'confirm',
+  children,
+  confirmLabel,
+  cancelLabel = 'Cancelar',
+  onConfirm,
+  loading = false,
+  className,
+}: ModalProps) {
+  const [busy, setBusy] = useState(false)
+  const isForm = type === 'form'
+  const code = resolveCatalogCode('Modal', { type: type === 'destructive' ? 'confirm' : type })
+  const reducedMotion = useReducedMotion()
+  // Entrada em `base`, saída em `fast` (em `base` sob movimento reduzido): o `RNModal` fica o tempo da saída.
+  const mounted = usePresence(open, true, reducedMotion ? motionTokens.duration.base : motionTokens.duration.fast)
+  const progress = useSharedValue(0)
+  const opacity = useSharedValue(0)
+  const translateY = useDerivedValue(() => (reducedMotion ? 0 : (1 - progress.get()) * motionTokens.distance.sm))
+  const scale = useDerivedValue(() => (reducedMotion ? 1 : 1 - (1 - progress.get()) * (1 - motionTokens.scales.enter)))
+
+  useEffect(() => {
+    if (open) {
+      progress.set(0)
+      progress.set(withSpring(1, openSpring()))
+      opacity.set(withTiming(1, reducedMotion ? reducedTiming() : timing('base', 'out')))
+      return
+    }
+    // Saída assimétrica: só a opacidade, mais curta; o cartão não encolhe nem desliza.
+    opacity.set(withTiming(0, reducedMotion ? reducedTiming() : timing('fast', 'out')))
+  }, [open, reducedMotion, progress, opacity])
+
+  const cardStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.get() }, { scale: scale.get() }],
+    opacity: opacity.get(),
+    flexShrink: 1,
+    maxHeight: '100%',
+  }))
+
+  const close = useCallback(() => onOpenChange(false), [onOpenChange])
+
+  const confirm = useCallback(async () => {
+    if (!onConfirm) {
+      close()
+      return
+    }
+    setBusy(true)
+    try {
+      const result = await onConfirm()
+      if (result !== false) {
+        close()
+      }
+    } finally {
+      setBusy(false)
+    }
+  }, [onConfirm, close])
+
+  useEffect(() => {
+    if (!open) return
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      close()
+      return true
+    })
+    return () => subscription.remove()
+  }, [open, close])
+
+  const resolvedConfirmLabel =
+    confirmLabel ?? (type === 'destructive' ? 'Excluir' : type === 'info' ? 'Entendi' : 'Confirmar')
+
+  const Body = isForm ? KeyboardAvoidingView : View
+
+  return (
+    <RNModal
+      transparent
+      animationType="none"
+      visible={mounted}
+      onRequestClose={close}
+      statusBarTranslucent
+      testID="modal-rn"
+    >
+      <Body {...(isForm ? { behavior: 'padding' as const, testID: 'modal-teclado' } : {})} className="flex-1">
+        <View className="absolute inset-0" pointerEvents="none">
+          <MotionView fill opacity={opacity} testID="modal-backdrop">
+            <View className="size-full bg-overlay" />
+          </MotionView>
+        </View>
+        {!isForm && (
+          <Pressable
+            accessibilityLabel="Fechar"
+            accessibilityRole={a11yPresets.button.accessibilityRole}
+            className="flex-1"
+            onPress={close}
+          />
+        )}
+        {isForm && <View className="flex-1" />}
+        <Animated.View testID="modal-card" style={cardStyle} pointerEvents={open ? 'auto' : 'none'}>
+          <View
+            role={a11yPresets.dialog.role}
+            accessibilityLabel={title}
+            accessibilityViewIsModal
+            className={cn('shrink max-h-full rounded-t-surface bg-card', className)}
+            dataSet={{ rendra: code }}
+          >
+            <OverlayShell
+              title={title}
+              description={isForm ? description : undefined}
+              hideHeader={!isForm}
+              fill={false}
+              onRequestClose={close}
+              footer={
+                <ActionBar
+                  sticky={false}
+                  primary={{
+                    label: resolvedConfirmLabel,
+                    destructive: type === 'destructive',
+                    loading: busy || loading,
+                    loadingLabel: `${resolvedConfirmLabel}...`,
+                    onPress: confirm,
+                  }}
+                  cancel={type === 'info' ? undefined : { label: cancelLabel, onPress: close }}
+                />
+              }
+            >
+              {isForm ? (
+                <View className="flex-col gap-2">{children}</View>
+              ) : (
+                <View className="items-center justify-center gap-4">
+                  <BrandFeedbackIcon type={feedbackByType[type]} size="2xl" animated />
+                  <Text weight="semibold" className="max-w-full break-words text-center text-lg text-foreground">
+                    {title}
+                  </Text>
+                  {description && <Text className="max-w-full break-words text-center text-sm text-muted-foreground">{description}</Text>}
+                  {children}
+                </View>
+              )}
+            </OverlayShell>
+          </View>
+        </Animated.View>
+      </Body>
+    </RNModal>
+  )
+}
+
+export function Modal(props: ModalProps) {
+  const mode = useMotion()
+  return mode === 'on' ? <ModalMotion {...props} /> : <ModalStatic {...props} />
 }

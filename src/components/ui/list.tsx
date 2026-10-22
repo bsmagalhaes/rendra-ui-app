@@ -1,7 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { AccessibilityInfo, FlatList, Platform, Pressable, View, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native'
+import { AccessibilityInfo, FlatList, Platform, View, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, type SharedValue } from 'react-native-reanimated'
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, type SharedValue } from 'react-native-reanimated'
+import { scheduleOnRN } from 'react-native-worklets'
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, GripVertical } from 'lucide-react-native'
 import { Text } from '../internal/text'
 import { Separator } from './separator'
@@ -13,6 +14,10 @@ import { a11yPresets } from '../../lib/a11y'
 import { cn } from '../../lib/cn'
 import { resolveCatalogCode } from '../../catalog/components'
 import { useReducedMotion } from '../../lib/reduced-motion'
+import { PressScale } from '../internal/motion-view'
+import { useMotion } from '../../lib/motion/context'
+import { layoutTransition } from '../../lib/motion/layout'
+import { springConfigs } from '../../lib/motion/tokens'
 import { announcePosition, autoScrollDelta, clampScrollOffset, dragTarget, moveItem, reorderRowOffset, rowSpan } from '../../lib/list-reorder'
 
 /** Selo textual de status da linha, com contraste AA (nunca so cor). Item D8 do levantamento. */
@@ -115,10 +120,15 @@ interface SortableApi {
   dragY: SharedValue<number>
   shift: SharedValue<number>
   durationMs: SharedValue<number>
+  /** Espelhos, em valores compartilhados, do que o `onUpdate` (worklet) precisa ler sem voltar à JS. */
+  fingerY: SharedValue<number>
+  startScroll: SharedValue<number>
+  scrollOffset: SharedValue<number>
+  gapSv: SharedValue<number>
+  sizesSv: SharedValue<(number | undefined)[]>
   measureRow: (id: string, height: number) => void
   begin: (id: string) => void
-  update: (translationY: number) => void
-  end: () => void
+  end: (translationY: number) => void
   cancel: () => void
   moveBy: (id: string, delta: -1 | 1, refocus?: boolean) => void
   registerHandle: (id: string, node: unknown) => void
@@ -151,18 +161,37 @@ function SortableSeparator() {
 function ReorderControls({ item, reorder }: { item: ListItem; reorder: RowReorder }) {
   const { sortable } = reorder
   // Ativa com poucos pixels de arraste vertical para vencer a rolagem da pagina (correcao 3 do
-  // parecer); o menu Mover e a alca nao disputam o toque com a linha.
+  // parecer); o menu Mover e a alca nao disputam o toque com a linha. O gesto e worklet: o `onUpdate`
+  // so escreve valores compartilhados (nenhum `setState`, nenhuma volta a JS por quadro); a JS e
+  // chamada so no comeco e no fim do arraste (`scheduleOnRN`).
+  const { begin, end, cancel, active, target, dragY, fingerY, startScroll, scrollOffset, gapSv, sizesSv } = sortable
+  const index = reorder.index
   const gesture = Gesture.Pan()
     .withTestId(`${sortable.testID}-handle-${item.id}`)
-    .runOnJS(true)
     .activeOffsetY([-ACTIVATE_OFFSET, ACTIVATE_OFFSET])
-    .onStart(() => sortable.begin(item.id))
-    .onUpdate((e) => sortable.update(e.translationY))
-    .onEnd((_e, success) => {
-      if (success) sortable.end()
-      else sortable.cancel()
+    .onStart(() => {
+      'worklet'
+      scheduleOnRN(begin, item.id)
     })
-    .onFinalize(() => sortable.cancel())
+    .onUpdate((e) => {
+      'worklet'
+      // `begin` ainda nao chegou a JS (ou o arraste foi cancelado): nada a mover.
+      if (active.get() !== index) return
+      fingerY.set(e.translationY)
+      const dy = e.translationY + scrollOffset.get() - startScroll.get()
+      dragY.set(dy)
+      target.set(dragTarget(index, dy, sizesSv.get(), gapSv.get()))
+    })
+    .onEnd((e, success) => {
+      'worklet'
+      // A translação final vai como argumento: a JS não depende de ler o valor que o worklet gravou.
+      if (success) scheduleOnRN(end, e.translationY)
+      else scheduleOnRN(cancel)
+    })
+    .onFinalize(() => {
+      'worklet'
+      scheduleOnRN(cancel)
+    })
   return (
     <View className="shrink-0 flex-row items-center">
       <GestureDetector gesture={gesture}>
@@ -226,13 +255,23 @@ function ReorderControls({ item, reorder }: { item: ListItem; reorder: RowReorde
  */
 function SortableRow({ item, reorder }: { item: ListItem; reorder: RowReorder }) {
   const { sortable, index } = reorder
+  const motionOn = useMotion() === 'on'
+  // Valor de modulo (nao chama funcao da JS dentro do worklet): mola `settle`, sem quique e interrompivel.
+  const moveConfig = springConfigs.settle
   const style = useAnimatedStyle(() => {
     const active = sortable.active.get()
     const isActive = active === index
     const offset = reorderRowOffset(index, active, sortable.target.get(), sortable.dragY.get(), sortable.shift.get())
     return {
       transform: [
-        { translateY: isActive || active < 0 ? offset : withTiming(offset, { duration: sortable.durationMs.get() }) },
+        {
+          translateY:
+            isActive || active < 0
+              ? offset
+              : motionOn
+                ? withSpring(offset, moveConfig)
+                : withTiming(offset, { duration: sortable.durationMs.get() }),
+        },
         { scale: isActive ? ACTIVE_SCALE : 1 },
       ],
       opacity: isActive ? ACTIVE_OPACITY : 1,
@@ -312,18 +351,18 @@ function ListRow({ item, reorder }: { item: ListItem; reorder?: RowReorder }) {
         <View className={stackedClassName}>
           {LinkComponent ? (
             <LinkComponent href={item.href} asChild>
-              <Pressable accessibilityRole={a11yPresets.link.accessibilityRole} className={hrefClassName}>
+              <PressScale accessibilityRole={a11yPresets.link.accessibilityRole} className={hrefClassName} outerClassName="min-h-touch justify-center pt-3" innerClassName="flex-row items-center" motionTestID={`list-press-${item.id}`}>
                 {textBlock}
-              </Pressable>
+              </PressScale>
             </LinkComponent>
           ) : (
-            <Pressable
+            <PressScale
               accessibilityRole={a11yPresets.link.accessibilityRole}
               onPress={() => navigate(item.href!)}
-              className={hrefClassName}
+              className={hrefClassName} outerClassName="min-h-touch justify-center pt-3" innerClassName="flex-row items-center" motionTestID={`list-press-${item.id}`}
             >
               {textBlock}
-            </Pressable>
+            </PressScale>
           )}
           {lowerRow}
         </View>
@@ -332,13 +371,13 @@ function ListRow({ item, reorder }: { item: ListItem; reorder?: RowReorder }) {
     if (item.onPress) {
       return (
         <View className={stackedClassName}>
-          <Pressable
+          <PressScale
             accessibilityRole={a11yPresets.button.accessibilityRole}
             onPress={item.onPress}
-            className="min-h-touch flex-row items-center pt-3"
+            className="min-h-touch flex-row items-center pt-3" outerClassName="min-h-touch justify-center pt-3" innerClassName="flex-row items-center" motionTestID={`list-press-${item.id}`}
           >
             {textBlock}
-          </Pressable>
+          </PressScale>
           {lowerRow}
         </View>
       )
@@ -370,18 +409,18 @@ function ListRow({ item, reorder }: { item: ListItem; reorder?: RowReorder }) {
         {controls}
         {LinkComponent ? (
           <LinkComponent href={item.href} asChild>
-            <Pressable accessibilityRole={a11yPresets.link.accessibilityRole} className="min-h-touch flex-1 flex-row items-center gap-3 py-3">
+            <PressScale accessibilityRole={a11yPresets.link.accessibilityRole} className="min-h-touch flex-1 flex-row items-center gap-3 py-3" outerClassName="min-h-touch flex-1 justify-center" innerClassName="flex-row items-center gap-3 py-3" motionTestID={`list-press-${item.id}`}>
               {mainContent}
-            </Pressable>
+            </PressScale>
           </LinkComponent>
         ) : (
-          <Pressable
+          <PressScale
             accessibilityRole={a11yPresets.link.accessibilityRole}
             onPress={() => navigate(item.href!)}
-            className="min-h-touch flex-1 flex-row items-center gap-3 py-3"
+            className="min-h-touch flex-1 flex-row items-center gap-3 py-3" outerClassName="min-h-touch flex-1 justify-center" innerClassName="flex-row items-center gap-3 py-3" motionTestID={`list-press-${item.id}`}
           >
             {mainContent}
-          </Pressable>
+          </PressScale>
         )}
         {trailing}
         {chevron}
@@ -393,13 +432,13 @@ function ListRow({ item, reorder }: { item: ListItem; reorder?: RowReorder }) {
     return (
       <View className={rowClassName}>
         {controls}
-        <Pressable
+        <PressScale
           accessibilityRole={a11yPresets.button.accessibilityRole}
           onPress={item.onPress}
-          className="min-h-touch flex-1 flex-row items-center gap-3 py-3"
+          className="min-h-touch flex-1 flex-row items-center gap-3 py-3" outerClassName="min-h-touch flex-1 justify-center" innerClassName="flex-row items-center gap-3 py-3" motionTestID={`list-press-${item.id}`}
         >
           {mainContent}
-        </Pressable>
+        </PressScale>
         {trailing}
         {chevron}
       </View>
@@ -418,12 +457,21 @@ export function List({ items, divided = true, empty, scrollEnabled = true, testI
   const baseTestID = testID ?? 'list'
   const reorderable = Boolean(onReorder)
   const reducedMotion = useReducedMotion()
+  // `on`: `Animated.FlatList` com `itemLayoutAnimation` (reordenar ao soltar ou pelo menu anima a
+  // célula; nunca a cada passo do arraste). `off`: o `FlatList` de sempre.
+  const motionOn = useMotion() === 'on'
+  const ListComponent = (motionOn ? Animated.FlatList : FlatList) as typeof FlatList
 
   const active = useSharedValue(-1)
   const target = useSharedValue(-1)
   const dragY = useSharedValue(0)
   const shift = useSharedValue(0)
   const durationMs = useSharedValue(PREVIEW_MS)
+  const fingerY = useSharedValue(0)
+  const startScroll = useSharedValue(0)
+  const scrollOffset = useSharedValue(0)
+  const gapSv = useSharedValue(0)
+  const sizesSv = useSharedValue<(number | undefined)[]>([])
   useEffect(() => {
     durationMs.set(reducedMotion ? 0 : PREVIEW_MS)
   }, [reducedMotion, durationMs])
@@ -448,7 +496,7 @@ export function List({ items, divided = true, empty, scrollEnabled = true, testI
   const listRef = useRef<FlatList<ListItem>>(null)
   const scroll = useRef({ offset: 0, content: 0, viewport: 0 })
   const timer = useRef<ReturnType<typeof setInterval> | null>(null)
-  const drag = useRef<{ from: number; translationY: number; startScroll: number; sizes: (number | undefined)[] } | null>(null)
+  const drag = useRef<{ from: number; sizes: (number | undefined)[]; startScroll: number } | null>(null)
 
   const reset = useCallback(() => {
     active.set(-1)
@@ -459,11 +507,11 @@ export function List({ items, divided = true, empty, scrollEnabled = true, testI
 
   const sortable = useMemo<SortableApi>(() => {
     // Deslocamento da linha no espaco do conteudo: o do dedo mais o quanto a lista rolou sozinha.
-    const displacement = (current: NonNullable<typeof drag.current>) => current.translationY + scroll.current.offset - current.startScroll
+    const displacement = (translationY: number, current: NonNullable<typeof drag.current>) => translationY + scroll.current.offset - current.startScroll
     const recompute = () => {
       const current = drag.current
       if (!current) return
-      const dy = displacement(current)
+      const dy = displacement(fingerY.get(), current)
       dragY.set(dy)
       target.set(dragTarget(current.from, dy, current.sizes, gap.current))
     }
@@ -487,12 +535,13 @@ export function List({ items, divided = true, empty, scrollEnabled = true, testI
       const span = rowSpan(current.from, current.sizes, gap.current)
       if (!span) return
       const { offset, content, viewport } = scroll.current
-      const finger = span.top + span.size / 2 + current.translationY - current.startScroll
+      const finger = span.top + span.size / 2 + fingerY.get() - current.startScroll
       const delta = autoScrollDelta(finger, viewport, AUTO_SCROLL_ZONE, AUTO_SCROLL_STEP)
       if (delta === 0) return
       const next = clampScrollOffset(offset + delta, content, viewport)
       if (next === offset) return
       scroll.current.offset = next
+      scrollOffset.set(next)
       listRef.current?.scrollToOffset({ offset: next, animated: false })
       recompute()
     }
@@ -503,6 +552,11 @@ export function List({ items, divided = true, empty, scrollEnabled = true, testI
       dragY,
       shift,
       durationMs,
+      fingerY,
+      startScroll,
+      scrollOffset,
+      gapSv,
+      sizesSv,
       measureRow: (id, height) => {
         heights.current.set(id, height)
       },
@@ -514,7 +568,12 @@ export function List({ items, divided = true, empty, scrollEnabled = true, testI
         const known = sizes.filter((h): h is number => typeof h === 'number' && h > 0)
         const average = known.length > 0 ? known.reduce((sum, h) => sum + h, 0) / known.length : 0
         const own = sizes[from]
-        drag.current = { from, translationY: 0, startScroll: scroll.current.offset, sizes }
+        drag.current = { from, sizes, startScroll: scroll.current.offset }
+        sizesSv.set(sizes)
+        gapSv.set(gap.current)
+        startScroll.set(scroll.current.offset)
+        scrollOffset.set(scroll.current.offset)
+        fingerY.set(0)
         shift.set((typeof own === 'number' && own > 0 ? own : average) + gap.current)
         active.set(from)
         target.set(from)
@@ -523,15 +582,10 @@ export function List({ items, divided = true, empty, scrollEnabled = true, testI
         stopAutoScroll()
         if (scrollEnabledRef.current) timer.current = setInterval(tick, AUTO_SCROLL_TICK_MS)
       },
-      update: (translationY) => {
-        if (!drag.current) return
-        drag.current.translationY = translationY
-        recompute()
-      },
-      end: () => {
+      end: (translationY) => {
         const current = drag.current
         if (!current) return
-        const to = dragTarget(current.from, displacement(current), current.sizes, gap.current)
+        const to = dragTarget(current.from, displacement(translationY, current), current.sizes, gap.current)
         drag.current = null
         stopAutoScroll()
         setDragging(false)
@@ -558,7 +612,7 @@ export function List({ items, divided = true, empty, scrollEnabled = true, testI
         else handleNodes.current.delete(id)
       },
     }
-  }, [baseTestID, active, target, dragY, shift, durationMs, reset])
+  }, [baseTestID, active, target, dragY, shift, durationMs, fingerY, startScroll, scrollOffset, gapSv, sizesSv, reset])
 
   // So no desmonte (e nao a cada troca de `sortable`): o laco de rolagem vive durante o arraste.
   useEffect(
@@ -585,11 +639,12 @@ export function List({ items, divided = true, empty, scrollEnabled = true, testI
   if (items.length === 0) return <>{empty ?? null}</>
 
   const list = (
-    <FlatList
+    <ListComponent
       ref={reorderable ? listRef : undefined}
+      {...(motionOn ? { itemLayoutAnimation: layoutTransition() } : {})}
       onLayout={reorderable ? (event: LayoutChangeEvent) => { scroll.current.viewport = event.nativeEvent.layout.height } : undefined}
       onContentSizeChange={reorderable ? (_width: number, height: number) => { scroll.current.content = height } : undefined}
-      onScroll={reorderable ? (event: NativeSyntheticEvent<NativeScrollEvent>) => { scroll.current.offset = event.nativeEvent.contentOffset.y } : undefined}
+      onScroll={reorderable ? (event: NativeSyntheticEvent<NativeScrollEvent>) => { scroll.current.offset = event.nativeEvent.contentOffset.y; scrollOffset.set(scroll.current.offset) } : undefined}
       scrollEventThrottle={reorderable ? 16 : undefined}
       testID={testID}
       dataSet={{ rendra: resolveCatalogCode('List', { sortable: reorderable }) }}

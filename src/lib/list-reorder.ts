@@ -21,6 +21,7 @@ export function announcePosition(label: string, to: number, total: number): stri
 
 /** Alturas efetivas das linhas: a sem medida (ou 0) vale a media das medidas; `null` sem nenhuma medida. */
 function effectiveSizes(heights: (number | undefined)[]): number[] | null {
+  'worklet'
   const measured = heights.filter((h): h is number => typeof h === 'number' && h > 0)
   if (measured.length === 0) return null
   const average = measured.reduce((sum, h) => sum + h, 0) / measured.length
@@ -29,6 +30,7 @@ function effectiveSizes(heights: (number | undefined)[]): number[] | null {
 
 /** Topo (no espaco do conteudo) e altura da linha `index`, contando o separador `gap`; `null` se nao der para medir. */
 export function rowSpan(index: number, heights: (number | undefined)[], gap: number): { top: number; size: number } | null {
+  'worklet'
   const sizes = effectiveSizes(heights)
   if (!sizes || index < 0 || index >= sizes.length) return null
   let top = 0
@@ -44,6 +46,7 @@ export function rowSpan(index: number, heights: (number | undefined)[], gap: num
  * 0 e o ultimo indice.
  */
 export function dragTarget(from: number, dy: number, heights: (number | undefined)[], gap: number): number {
+  'worklet'
   const span = rowSpan(from, heights, gap)
   const sizes = effectiveSizes(heights)
   if (!span || !sizes) return from

@@ -7,6 +7,9 @@ import { BrandFeedbackIcon } from './brand-feedback-icon'
 import { Text } from '../internal/text'
 import { a11yPresets } from '../../lib/a11y'
 import { cn } from '../../lib/cn'
+import { MotionPresence } from '../internal/motion-view'
+import { fadeOut } from '../../lib/motion/fade'
+import { slideIn } from '../../lib/motion/slide'
 
 export interface AlertProps {
   type: FeedbackType
@@ -48,6 +51,7 @@ export function Alert({
   const isAssertive = type === 'error' || type === 'warning'
 
   return (
+    <MotionPresence enter={(reduced) => slideIn('down', reduced, 0, 8)} exit={fadeOut}>
     <View
       testID={testID}
       dataSet={{ rendra: 'ALRT-001' }}
@@ -85,5 +89,6 @@ export function Alert({
         </Pressable>
       ) : null}
     </View>
+    </MotionPresence>
   )
 }

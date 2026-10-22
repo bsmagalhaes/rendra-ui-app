@@ -30,6 +30,8 @@ describe('menu de exemplo da vitrine', () => {
       '/agenda',
       '/kanban',
       '/componentes',
+      '/componentes-motion',
+      '/dashboard-motion',
       '/tokens',
       '/galeria',
       '/configuracoes',
@@ -57,6 +59,14 @@ describe('menu de exemplo da vitrine', () => {
     expect(porTitulo('Atendimento')?.to).toBe('/atendimento')
     expect(porTitulo('Agenda')?.to).toBe('/agenda')
     expect(porTitulo('Funil')?.to).toBe('/kanban')
+  })
+
+  it('o Dashboard com motion fica logo abaixo de Componentes com motion, com o ícone de dashboard e fora da barra inferior', () => {
+    const sistema = exampleNavigation[1]!.items.map((i) => i.title)
+    expect(sistema.indexOf('Dashboard com motion')).toBe(sistema.indexOf('Componentes com motion') + 1)
+    expect(porTitulo('Dashboard com motion')?.to).toBe('/dashboard-motion')
+    expect(porTitulo('Dashboard com motion')?.icon).toBe(porTitulo('Painel')?.icon)
+    expect(porTitulo('Dashboard com motion')?.bottomNav).toBeUndefined()
   })
 
   it('o Funil e o Atendimento não entram na barra inferior (continuam 4 itens)', () => {

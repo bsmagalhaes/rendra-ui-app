@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { View } from 'react-native'
 import Animated, {
+  type WithTimingConfig,
   cancelAnimation,
   useAnimatedStyle,
   useSharedValue,
@@ -12,6 +13,7 @@ import { Text } from '../internal/text'
 import { a11yPresets } from '../../lib/a11y'
 import { cn } from '../../lib/cn'
 import { useReducedMotion } from '../../lib/reduced-motion'
+import { timing } from '../../lib/motion/tokens'
 
 export type ProgressTone = 'primary' | 'brand' | 'success' | 'warning' | 'error'
 
@@ -40,6 +42,23 @@ const toneClass: Record<Exclude<ProgressTone, 'brand'>, string> = {
   error: 'bg-destructive',
 }
 
+/**
+ * Config da largura determinada, igual em `on` e `off`: progresso é movimento constante, então 200 ms
+ * (`base`) em curva `linear`; com movimento reduzido a duração é 0. Pura, para o teste conferir.
+ */
+export function progressTimingConfig(reducedMotion: boolean): WithTimingConfig {
+  if (reducedMotion) return { duration: 0 }
+  return timing('base', 'linear')
+}
+
+/** Deslocamento do indeterminado em % da largura da PRÓPRIA barra (33,333% da trilha): 66% da trilha = 198%. */
+export const INDETERMINATE_TRAVEL = 198
+
+export function indeterminateTranslate(progress: number): `${number}%` {
+  'worklet'
+  return `${progress * INDETERMINATE_TRAVEL}%`
+}
+
 export function Progress({
   value,
   size = 'md',
@@ -51,7 +70,7 @@ export function Progress({
   const determinate = value != null
   const clamped = determinate ? Math.min(100, Math.max(0, value as number)) : 0
   const reducedMotion = useReducedMotion()
-  const indeterminateLeft = useSharedValue(0)
+  const indeterminate = useSharedValue(0)
   // C3 (veredito do Opus): a largura determinada anima (contrato §12.19, transition 300ms). O
   // primeiro render já nasce no valor clampado (useSharedValue(clamped)); mudanças seguintes
   // animam via withTiming.
@@ -60,25 +79,26 @@ export function Progress({
   useEffect(() => {
     if (determinate) return
     if (reducedMotion) {
-      cancelAnimation(indeterminateLeft)
-      indeterminateLeft.set(0)
+      cancelAnimation(indeterminate)
+      indeterminate.set(0)
       return
     }
-    indeterminateLeft.set(withRepeat(withTiming(66, { duration: 1000 }), -1, true))
-    return () => cancelAnimation(indeterminateLeft)
-  }, [determinate, reducedMotion, indeterminateLeft])
+    // Vai e volta em `pulse` (1.000 ms), `linear` (movimento constante), por `translateX` (nunca `left`).
+    indeterminate.set(withRepeat(withTiming(1, timing('pulse', 'linear')), -1, true))
+    return () => cancelAnimation(indeterminate)
+  }, [determinate, reducedMotion, indeterminate])
 
   useEffect(() => {
     if (!determinate) return
-    width.set(withTiming(clamped, { duration: reducedMotion ? 0 : 300 }))
+    width.set(withTiming(clamped, progressTimingConfig(reducedMotion)))
   }, [determinate, clamped, reducedMotion, width])
 
   const animated = useAnimatedStyle(() => ({
     position: 'absolute' as const,
-    left: determinate ? 0 : `${indeterminateLeft.get()}%`,
     top: 0,
     height: '100%',
     width: determinate ? progressWidth(width.get()) : ('33.333%' as const),
+    transform: determinate ? [] : [{ translateX: indeterminateTranslate(indeterminate.get()) }],
   }))
 
   const now = determinate ? Math.round(clamped) : undefined
@@ -95,7 +115,7 @@ export function Progress({
         aria-valuemin={0}
         aria-valuemax={100}
         className={cn(
-          'relative w-full overflow-hidden rounded-full bg-muted',
+          'relative min-w-0 flex-1 overflow-hidden rounded-full bg-muted',
           size === 'sm' ? 'h-1' : 'h-2',
           className,
         )}

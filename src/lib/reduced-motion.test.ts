@@ -1,6 +1,18 @@
 import { AccessibilityInfo } from 'react-native'
 import { act, renderHook, waitFor } from '@testing-library/react-native'
+import { useReducedMotion as useSystemReducedMotion } from 'react-native-reanimated'
 import { useReducedMotion } from './reduced-motion'
+
+// O hook do Reanimated lê o ajuste do sistema de forma síncrona (constante da partida do app); o
+// teste controla esse valor para provar o primeiro quadro.
+jest.mock('react-native-reanimated', () => ({
+  ...jest.requireActual('react-native-reanimated'),
+  __esModule: true,
+  useReducedMotion: jest.fn(() => false),
+}))
+const mockSistema = useSystemReducedMotion as jest.Mock
+
+beforeEach(() => mockSistema.mockReturnValue(false))
 
 describe('useReducedMotion', () => {
   it('devolve false quando AccessibilityInfo.isReduceMotionEnabled resolve false', async () => {
@@ -67,5 +79,41 @@ describe('useReducedMotion', () => {
     })
     expect(result.current).toBe(false)
     expect(remove).toHaveBeenCalledTimes(1)
+  })
+
+  it('A8: com o ajuste do sistema ligado, o PRIMEIRO quadro já vem reduzido (sem esperar a Promise)', async () => {
+    mockSistema.mockReturnValue(true)
+    // a Promise nunca resolve: só o valor síncrono do Reanimated pode explicar o resultado
+    jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockReturnValue(new Promise<boolean>(() => {}))
+    const quadros: boolean[] = []
+    await renderHook(() => {
+      const valor = useReducedMotion()
+      quadros.push(valor)
+      return valor
+    })
+    expect(quadros[0]).toBe(true)
+    expect(quadros.every((v) => v)).toBe(true)
+  })
+
+  it('B4: mesmo semeado pelo Reanimated, a mudança do sistema com o app aberto ainda reage (nos dois sentidos)', async () => {
+    mockSistema.mockReturnValue(true)
+    jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true)
+    let emit: ((value: boolean) => void) | undefined
+    jest.spyOn(AccessibilityInfo, 'addEventListener').mockImplementation(
+      ((_event: string, handler: (value: boolean) => void) => {
+        emit = handler
+        return { remove: jest.fn() }
+      }) as unknown as typeof AccessibilityInfo.addEventListener,
+    )
+    const { result } = await renderHook(() => useReducedMotion())
+    expect(result.current).toBe(true)
+    await act(async () => {
+      emit?.(false)
+    })
+    expect(result.current).toBe(false)
+    await act(async () => {
+      emit?.(true)
+    })
+    expect(result.current).toBe(true)
   })
 })

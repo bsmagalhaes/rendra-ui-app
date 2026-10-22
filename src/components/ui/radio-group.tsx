@@ -1,10 +1,16 @@
+import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { Pressable, View } from 'react-native'
+import { useDerivedValue, useSharedValue, withTiming } from 'react-native-reanimated'
 import { Text } from '../internal/text'
 import { cn } from '../../lib/cn'
 import { a11yPresets } from '../../lib/a11y'
 import { useControlledState } from '../../hooks/use-controlled-state'
 import { resolveCatalogCode } from '../../catalog/components'
+import { MotionView } from '../internal/motion-view'
+import { timing } from '../../lib/motion/tokens'
+import { motionTokens } from '../../theme/motion'
+import { useMotionPreset } from '../../lib/motion/use-motion-preset'
 
 export interface RadioOption {
   value: string
@@ -27,7 +33,28 @@ export interface RadioGroupProps {
   accessibilityLabel?: string
 }
 
+/**
+ * Alvo do ponto interno: fora de `on` devolve `null` (nada é animado, as classes `scale-100`/`scale-0`
+ * de sempre mandam); em `on` devolve o valor final (progresso 0 a 1) e se anima em 120 ms `ease-out`
+ * (movimento reduzido troca seco). O progresso guia opacidade e escala de 0,9 a 1: o ponto nunca
+ * nasce de `scale(0)`.
+ */
+export function radioDotTarget(active: boolean, reduced: boolean, checked: boolean): { value: 0 | 1; animate: boolean } | null {
+  if (!active) return null
+  return { value: checked ? 1 : 0, animate: !reduced }
+}
+
 function Bullet({ checked, invalid }: { checked: boolean; invalid?: boolean }) {
+  const { active, reduced } = useMotionPreset()
+  const dot = useSharedValue(checked ? 1 : 0)
+  useEffect(() => {
+    // `on`: o ponto aparece de 0,9 a 1 com opacidade (120 ms, `ease-out`, sem quique) e some do mesmo
+    // jeito; com movimento reduzido troca sem animar. Em `off` não mexe no valor.
+    const alvo = radioDotTarget(active, reduced, checked)
+    if (!alvo) return
+    dot.set(alvo.animate ? withTiming(alvo.value, timing('fast', 'out')) : alvo.value)
+  }, [active, checked, reduced, dot])
+  const dotScale = useDerivedValue(() => motionTokens.scales.small + (1 - motionTokens.scales.small) * dot.get())
   return (
     <View
       className={cn(
@@ -36,7 +63,13 @@ function Bullet({ checked, invalid }: { checked: boolean; invalid?: boolean }) {
         invalid && 'border-destructive',
       )}
     >
-      <View className={cn('size-2 rounded-full bg-primary', checked ? 'scale-100' : 'scale-0')} />
+      {active ? (
+        <MotionView testID="radio-ponto" scale={dotScale} opacity={dot}>
+          <View className="size-2 rounded-full bg-primary" />
+        </MotionView>
+      ) : (
+        <View className={cn('size-2 rounded-full bg-primary', checked ? 'scale-100' : 'scale-0')} />
+      )}
     </View>
   )
 }

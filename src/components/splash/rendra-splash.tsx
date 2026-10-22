@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AccessibilityInfo, View } from 'react-native'
 import Animated, {
-  Easing,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
@@ -10,6 +9,7 @@ import Animated, {
 import { Text } from '../internal/text'
 import { BrandLogo } from '../ui/brand-logo'
 import { useBrand } from '../../brand/use-brand'
+import { easings } from '../../lib/motion/tokens'
 
 /*
  * Splash animado da abertura do app: um overlay que cobre a tela com a marca do modelo e da
@@ -31,8 +31,9 @@ const ATRASO_NOME_MS = 160
 const ATRASO_LEMA_MS = 320
 const ANEL_MS = 700
 
-const EASE_OUT = Easing.bezier(0.22, 1, 0.36, 1)
-const EASE_SPRING = Easing.bezier(0.34, 1.56, 0.64, 1)
+// As curvas vêm dos tokens (sem literal): a mesma `ease-out` e `back` do design system.
+const EASE_OUT = easings.out
+const EASE_SPRING = easings.back
 
 // Estilos como funções puras, cada uma com a diretiva 'worklet' (rodam na UI runtime e ficam
 // testáveis isoladas, como `drawerTranslateX`).

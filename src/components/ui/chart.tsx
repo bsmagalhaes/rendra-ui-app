@@ -26,6 +26,7 @@ import {
 } from '../../lib/chart-scale'
 import { a11yPresets } from '../../lib/a11y'
 import { cn } from '../../lib/cn'
+import { ChartReveal } from '../internal/chart-reveal'
 
 // `Chart` mora no subcaminho `@rendra-ui/app/chart` (src/chart.ts): carrega `d3-shape` e nunca
 // entra na entrada principal. Toda cor de SVG sai de `themeColorString(themeVars, ...)`, nunca
@@ -217,6 +218,7 @@ function CartesianPlot({
           fillOpacity={0.35}
         />
       ) : null}
+      <ChartReveal width={width} height={height}>
       {bars.map(({ s, index }) =>
         data.map((row, i) => {
           const valor = stack ? stack[i]![s.key]! : null
@@ -277,6 +279,7 @@ function CartesianPlot({
           </G>
         )
       })}
+      </ChartReveal>
       {data.map((row, i) =>
         i % labelEvery === 0 ? (
           <SvgText key={i} x={xCenter(i)} y={height - 6} fontSize={FONT_SIZE} fontFamily={fontFamily} fill={axis} textAnchor="middle">
@@ -299,6 +302,7 @@ function PieChart({ props, width, height }: { props: CartesianChartProps; width:
   const borda = themeColorString(themeVars, '--rendra-card')
   return (
     <Svg width={width} height={height}>
+      <ChartReveal width={width} height={height}>
       <G transform={`translate(${width / 2},${height / 2})`}>
         {fatias.map(({ start, end }, i) => (
           <Path
@@ -311,6 +315,7 @@ function PieChart({ props, width, height }: { props: CartesianChartProps; width:
           />
         ))}
       </G>
+      </ChartReveal>
     </Svg>
   )
 }
@@ -497,11 +502,13 @@ function GaugeChart(props: GaugeChartProps) {
                 <Stop offset="1" stopColor={themeColorString(themeVars, '--rendra-meter-high')} />
               </LinearGradient>
             </Defs>
+            <ChartReveal width={GAUGE_WIDTH} height={GAUGE_HEIGHT}>
             <Path d={gaugeArcPath(0, 1, 92)} fill="none" stroke={card} strokeWidth={20} strokeLinecap="round" />
             <Path testID="chart-gauge-arco" d={gaugeArcPath(0, 1, 92)} fill="none" stroke={`url(#${gradientId})`} strokeWidth={16} strokeLinecap="round" />
             <Line testID="chart-gauge-ponteiro" x1={120} y1={120} x2={ponta.x} y2={ponta.y} stroke={foreground} strokeWidth={3} strokeLinecap="round" />
             <Circle cx={120} cy={120} r={6} fill={foreground} />
             <Circle cx={120} cy={120} r={2} fill={card} />
+            </ChartReveal>
             <SvgText x={20} y={136} fontSize={FONT_SIZE} fontFamily={fontFamily} fill={eixo} textAnchor="middle">
               0%
             </SvgText>

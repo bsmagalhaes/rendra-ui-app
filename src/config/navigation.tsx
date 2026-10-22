@@ -8,6 +8,7 @@ import {
   ListChecks,
   Palette,
   Settings,
+  Sparkles,
   SquareKanban,
   UserPlus,
   Users,
@@ -54,6 +55,8 @@ export function buildNavigation(totalClientes: number, naoLidas = 0): NavGroup[]
       title: 'Sistema',
       items: [
         { title: 'Componentes', to: '/componentes', icon: Blocks, bottomNav: true, shortTitle: 'Vitrine' },
+        { title: 'Componentes com motion', to: '/componentes-motion', icon: Sparkles },
+        { title: 'Dashboard com motion', to: '/dashboard-motion', icon: LayoutDashboard },
         { title: 'Tokens', to: '/tokens', icon: Palette },
         { title: 'Galeria', to: '/galeria', icon: Images, bottomNav: true },
         { title: 'Configurações', to: '/configuracoes', icon: Settings, bottomNav: true, shortTitle: 'Ajustes' },

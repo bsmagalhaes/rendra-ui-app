@@ -1,9 +1,13 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { FlatList, Pressable, View } from 'react-native'
+import { FlatList, View } from 'react-native'
+import Animated from 'react-native-reanimated'
 import { ArrowDown, ArrowRightLeft, ArrowUp, CalendarDays, EllipsisVertical, Mail, Phone, Plus, User } from 'lucide-react-native'
 import { format } from 'date-fns'
 import { Text } from '../internal/text'
+import { PressScale } from '../internal/motion-view'
+import { useMotion } from '../../lib/motion/context'
+import { layoutTransition } from '../../lib/motion/layout'
 import { Avatar } from './avatar'
 import { Badge, dotClass, type BadgeProps, type BadgeTone } from './badge'
 import { Button } from './button'
@@ -285,6 +289,10 @@ function ColumnView({
   const visible = cards.slice(0, shown)
   const hasMore = shown < cards.length || Boolean(props.hasMore?.(column.id))
   const tone: BadgeTone = column.tone ?? 'neutral'
+  // `on`: `Animated.FlatList` com `itemLayoutAnimation` (quem se move é a célula da lista, não o filho);
+  // `off`: o `FlatList` de sempre.
+  const motionOn = useMotion() === 'on'
+  const ListComponent = (motionOn ? Animated.FlatList : FlatList) as typeof FlatList
 
   return (
     <View className="gap-3 rounded-surface bg-muted p-2">
@@ -318,8 +326,9 @@ function ColumnView({
       </View>
       {/* `group` e nao `list`: o axe exige `listitem` como filho direto de `list` (aria-required-children), e o FlatList do web insere divs no meio */}
       <View {...a11yPresets.group} accessibilityLabel={`Cards em ${column.title}`}>
-        <FlatList
+        <ListComponent
           testID={`kanban-list-${column.id}`}
+          {...(motionOn ? { itemLayoutAnimation: layoutTransition() } : {})}
           scrollEnabled={scrollEnabled}
           data={visible}
           keyExtractor={(card) => card.id}
@@ -341,9 +350,15 @@ function ColumnView({
               <View className="flex-row items-start gap-1 rounded-block border border-border bg-card p-3 shadow-sm">
                 <View className="min-w-0 flex-1">
                   {onCardClick ? (
-                    <Pressable accessibilityRole={a11yPresets.button.accessibilityRole} onPress={() => onCardClick(item)} className="min-h-touch">
+                    <PressScale
+                      accessibilityRole={a11yPresets.button.accessibilityRole}
+                      onPress={() => onCardClick(item)}
+                      className="min-h-touch"
+                      outerClassName="min-h-touch"
+                      motionTestID={`kanban-card-press-${item.id}`}
+                    >
                       {conteudo}
-                    </Pressable>
+                    </PressScale>
                   ) : (
                     conteudo
                   )}

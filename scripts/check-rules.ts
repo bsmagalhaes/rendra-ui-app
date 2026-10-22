@@ -125,6 +125,7 @@ export const R3_ALLOWED_FILES = [
   'src/components/layout/primitives.tsx',
   'src/components/ui/textarea.tsx',
   'src/components/ui/button.tsx', // useAnimatedStyle (escala 0,98 do pressed)
+  'src/components/internal/motion-view.tsx', // useAnimatedStyle do caminho motion="on" (API fechada, sem style do chamador)
   'src/components/ui/spinner.tsx', // useAnimatedStyle (rotação)
   'src/components/ui/brand-feedback-icon.tsx', // useAnimatedStyle (pop e shake)
   // F2, AppShell

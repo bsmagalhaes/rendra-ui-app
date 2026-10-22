@@ -4,6 +4,7 @@ import { Pressable, View } from 'react-native'
 import { format } from 'date-fns'
 import { ChevronDown, MoreHorizontal, RotateCw } from 'lucide-react-native'
 import { Text } from '../internal/text'
+import { PressScale } from '../internal/motion-view'
 import { Badge, type BadgeProps } from './badge'
 import { Button } from './button'
 import { Card } from './card'
@@ -165,18 +166,25 @@ function CellContent<T>({
       main
     ) : LinkComponent ? (
       <LinkComponent href={href} asChild>
-        <Pressable accessibilityRole={a11yPresets.link.accessibilityRole} className="min-h-touch justify-center">
+        <PressScale
+          accessibilityRole={a11yPresets.link.accessibilityRole}
+          className="min-h-touch justify-center"
+          outerClassName="min-h-touch justify-center"
+          motionTestID="tabela-link"
+        >
           {main}
-        </Pressable>
+        </PressScale>
       </LinkComponent>
     ) : (
-      <Pressable
+      <PressScale
         accessibilityRole={a11yPresets.link.accessibilityRole}
         onPress={() => navigate(href)}
         className="min-h-touch justify-center"
+        outerClassName="min-h-touch justify-center"
+        motionTestID="tabela-link"
       >
         {main}
-      </Pressable>
+      </PressScale>
     )
 
   const extra = (col.details?.(row) ?? []).filter((d) => d != null && d !== '')

@@ -4,6 +4,8 @@ import { Text } from '../internal/text'
 import { cn } from '../../lib/cn'
 import { a11yPresets } from '../../lib/a11y'
 import { resolveCatalogCode } from '../../catalog/components'
+import { PressScale } from '../internal/motion-view'
+import { motionTokens } from '../../theme/motion'
 
 /*
  * Avaliação: estrelas (1 a max, padrão 5) ou escala numérica (min a max, padrão 1 a 10).
@@ -80,7 +82,7 @@ export function Rating({
         {options.map((n) => {
           const filled = value !== null && n <= value
           return (
-            <Pressable
+            <PressScale
               key={n}
               accessibilityRole={a11yPresets.radio.accessibilityRole}
               accessibilityState={{ checked: n === value, disabled }}
@@ -88,14 +90,19 @@ export function Rating({
               accessibilityLabel={`${n} ${n === 1 ? 'estrela' : 'estrelas'}`}
               disabled={disabled}
               onPress={() => select(n)}
+              pressScale={motionTokens.scales.bump}
+              playful
+              motionTestID={`rating-press-${n}`}
               className={cn('min-h-touch min-w-touch items-center justify-center rounded-control', disabled && 'opacity-50')}
+              outerClassName={cn('min-h-touch min-w-touch items-center justify-center rounded-control', disabled && 'opacity-50')}
+              innerClassName="items-center justify-center"
             >
               <Star
                 testID={`rating-estrela-${n}`}
                 fill={filled ? 'currentColor' : 'none'}
                 className={cn('size-icon-lg', filled ? 'text-warning' : invalid ? 'text-destructive' : 'text-muted-foreground')}
               />
-            </Pressable>
+            </PressScale>
           )
         })}
       </View>

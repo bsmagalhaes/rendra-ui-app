@@ -6,6 +6,9 @@ import { dotClass, type BadgeTone } from './badge'
 import type { FeedbackType } from '../../brand/types'
 import { a11yPresets } from '../../lib/a11y'
 import { cn } from '../../lib/cn'
+import { MotionPresence } from '../internal/motion-view'
+import { slideIn } from '../../lib/motion/slide'
+import { stagger } from '../../lib/motion/stagger'
 import { resolveCatalogCode } from '../../catalog/components'
 
 type TimelineTone = FeedbackType | 'neutral'
@@ -68,7 +71,8 @@ export function Timeline({ events, className }: TimelineProps) {
         const Icon = event.icon ?? (event.status ? statusIcon[event.status] : undefined)
         const last = index === events.length - 1
         return (
-          <View key={event.id} testID={`timeline-item-${event.id}`} {...a11yPresets.listitem} className="flex-row gap-3">
+          <MotionPresence key={event.id} testID={`timeline-anim-${event.id}`} enter={(r) => slideIn('up', r, stagger(index, r), 8)}>
+          <View testID={`timeline-item-${event.id}`} {...a11yPresets.listitem} className="flex-row gap-3">
             <View className="w-8 items-center">
               <View
                 testID={`timeline-marcador-${event.id}`}
@@ -95,6 +99,7 @@ export function Timeline({ events, className }: TimelineProps) {
               ) : null}
             </View>
           </View>
+          </MotionPresence>
         )
       })}
     </View>

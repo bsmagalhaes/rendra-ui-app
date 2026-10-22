@@ -1,12 +1,14 @@
 import { useEffect } from 'react'
 import { View } from 'react-native'
-import Animated, { Easing, useAnimatedProps, useAnimatedStyle, useSharedValue, withDelay, withSequence, withTiming } from 'react-native-reanimated'
+import Animated, { useAnimatedProps, useAnimatedStyle, useSharedValue, withDelay, withSequence, withTiming } from 'react-native-reanimated'
 import { cssInterop } from 'nativewind'
 import Svg, { Circle, Path } from 'react-native-svg'
 import { AlertTriangle, CheckCircle2, Info, XCircle } from 'lucide-react-native'
 import { useBrand } from '../../brand/use-brand'
 import type { FeedbackType } from '../../brand/types'
 import { useReducedMotion } from '../../lib/reduced-motion'
+import { easings } from '../../lib/motion/tokens'
+import { motionTokens } from '../../theme/motion'
 import { cn } from '../../lib/cn'
 
 // Mesmo padrão de gradient.tsx:6: o Svg só resolve `currentColor` a partir do próprio `style.color`,
@@ -91,9 +93,10 @@ const glyphPath: Record<FeedbackType, string> = {
   info: 'M6 3.2v0M6 5.5v3.3',
 }
 
-const EASE_OUT = Easing.bezier(0.22, 1, 0.36, 1)
-const EASE_IN_OUT = Easing.bezier(0.65, 0, 0.35, 1)
-const EASE_SPRING = Easing.bezier(0.34, 1.56, 0.64, 1)
+// As curvas vêm dos tokens (sem literal): a mesma `ease-out`, `ease-in-out` e `back` do design system.
+const EASE_OUT = easings.out
+const EASE_IN_OUT = easings.inOut
+const EASE_SPRING = easings.back
 
 /**
  * Tempo de cada animação (exposto como `colorClass`, para o teste afirmar a configuração).
@@ -101,7 +104,7 @@ const EASE_SPRING = Easing.bezier(0.34, 1.56, 0.64, 1)
  * trilha de 240 ms, de 0,92 a 1 com opacidade, em curva de saída suave, sem quique e sem tremor.
  */
 export const animationTimings = {
-  pop: { duration: 420, easing: 'spring' },
+  pop: { duration: motionTokens.duration.pop, easing: 'spring' },
   encaixe: { duration: 240, easing: 'ease-out' },
 } as const
 
@@ -124,7 +127,7 @@ export function BrandFeedbackIcon({
 
   const symbolOpacity = useSharedValue(playAnimation ? 0 : 1)
   const encaixe = animation === 'encaixe'
-  const startScale = encaixe ? 0.92 : 0.4
+  const startScale = encaixe ? 0.92 : motionTokens.scales.pop
   const symbolScale = useSharedValue(playAnimation ? startScale : 1)
   const badgeOpacity = useSharedValue(playAnimation ? 0 : 1)
   const badgeScale = useSharedValue(playAnimation ? startScale : 1)
@@ -132,11 +135,15 @@ export function BrandFeedbackIcon({
   const strokeDashoffset = useSharedValue(playAnimation && !encaixe ? 1 : 0)
   const shakeX = useSharedValue(0)
 
-  // pop: 0.4 -> 1.12 (60% do tempo) -> 1 (40% restante), spec:304
-  const pop = () => withSequence(withTiming(1.12, { duration: 252, easing: EASE_SPRING }), withTiming(1, { duration: 168, easing: EASE_SPRING }))
-
   useEffect(() => {
     if (!playAnimation) return
+    // pop: 0.4 -> 1.12 (60% do tempo, 252 ms) -> 1 (40% restante, 168 ms), spec:304
+    const subida = Math.round(motionTokens.duration.pop * 0.6)
+    const pop = () =>
+      withSequence(
+        withTiming(1.12, { duration: subida, easing: EASE_SPRING }),
+        withTiming(1, { duration: motionTokens.duration.pop - subida, easing: EASE_SPRING }),
+      )
     if (encaixe) {
       // Uma trilha só, 240 ms, saída suave, sem atraso e sem tremor (nem no erro).
       const trilha = { duration: animationTimings.encaixe.duration, easing: EASE_OUT }
@@ -146,20 +153,22 @@ export function BrandFeedbackIcon({
       badgeScale.value = withTiming(1, trilha)
       return
     }
-    symbolOpacity.value = withTiming(1, { duration: 420, easing: EASE_SPRING })
+    symbolOpacity.value = withTiming(1, { duration: motionTokens.duration.pop, easing: EASE_SPRING })
     symbolScale.value = pop()
-    badgeOpacity.value = withDelay(120, withTiming(1, { duration: 420, easing: EASE_SPRING }))
-    badgeScale.value = withDelay(120, pop())
-    strokeDashoffset.value = withDelay(200, withTiming(0, { duration: 420, easing: EASE_OUT }))
+    badgeOpacity.value = withDelay(motionTokens.duration.fast, withTiming(1, { duration: motionTokens.duration.pop, easing: EASE_SPRING }))
+    badgeScale.value = withDelay(motionTokens.duration.fast, pop())
+    strokeDashoffset.value = withDelay(motionTokens.delay.draw, withTiming(0, { duration: motionTokens.duration.draw, easing: EASE_OUT }))
     if (type === 'error') {
+      // cinco passos de 84 ms (um quinto do pop)
+      const tremor = Math.round(motionTokens.duration.pop / 5)
       shakeX.value = withDelay(
-        620,
+        motionTokens.duration.pop + motionTokens.delay.draw,
         withSequence(
-          withTiming(-8, { duration: 84, easing: EASE_IN_OUT }),
-          withTiming(8, { duration: 84, easing: EASE_IN_OUT }),
-          withTiming(-8, { duration: 84, easing: EASE_IN_OUT }),
-          withTiming(8, { duration: 84, easing: EASE_IN_OUT }),
-          withTiming(0, { duration: 84, easing: EASE_IN_OUT }),
+          withTiming(-8, { duration: tremor, easing: EASE_IN_OUT }),
+          withTiming(8, { duration: tremor, easing: EASE_IN_OUT }),
+          withTiming(-8, { duration: tremor, easing: EASE_IN_OUT }),
+          withTiming(8, { duration: tremor, easing: EASE_IN_OUT }),
+          withTiming(0, { duration: tremor, easing: EASE_IN_OUT }),
         ),
       )
     }

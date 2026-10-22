@@ -10,6 +10,16 @@ import { RendraRouterBridge } from '../../router-bridge'
 import { List } from './list'
 import { nodesWithCode } from '../../test-utils/rendra-code'
 
+// O gesto da alça é worklet e só volta à JS no começo e no fim do arraste, por `scheduleOnRN`, que na UI
+// thread é assíncrono. Aqui a volta é síncrona para os testes de conta do arraste seguirem lineares; o
+// comportamento com a volta assíncrona (atualizações que chegam antes do `begin`) é provado em
+// `list.async.test.tsx`.
+jest.mock('react-native-worklets', () => ({
+  ...jest.requireActual('react-native-worklets'),
+  __esModule: true,
+  scheduleOnRN: (fn: (...args: unknown[]) => void, ...args: unknown[]) => fn(...args),
+}))
+
 const items = [
   { id: '1', title: 'Ana Souza', description: 'ana@exemplo.com' },
   { id: '2', title: 'Bruno Lima', description: 'bruno@exemplo.com' },

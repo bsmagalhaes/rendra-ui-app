@@ -6,6 +6,9 @@ import { Text } from '../internal/text'
 import { cn } from '../../lib/cn'
 import { a11yPresets } from '../../lib/a11y'
 import { useControlledState } from '../../hooks/use-controlled-state'
+import { MotionPresence, MotionView } from '../internal/motion-view'
+import { checkIn } from '../../lib/motion/pop'
+import { usePressScale } from '../../lib/motion/use-press-scale'
 
 export interface CheckboxProps {
   checked?: boolean | 'indeterminate'
@@ -48,7 +51,9 @@ export function Checkbox({
     setChecked(!(isChecked || isIndeterminate))
   }
 
-  const boxVisual = (
+  const { active: motionOn, scale: pressScale, pressProps } = usePressScale()
+
+  const box = (
     <View
       className={cn(
         'size-icon-md items-center justify-center rounded-item border border-input bg-card',
@@ -57,9 +62,17 @@ export function Checkbox({
         disabled && 'opacity-50',
       )}
     >
-      {isIndeterminate ? <Minus className="text-primary-foreground" /> : isChecked ? <Check className="text-primary-foreground" /> : null}
+      {isIndeterminate ? (
+        <Minus className="text-primary-foreground" />
+      ) : isChecked ? (
+        <MotionPresence enter={checkIn}>
+          <Check className="text-primary-foreground" />
+        </MotionPresence>
+      ) : null}
     </View>
   )
+  // `on`: a caixa escala no toque (spring); `off` devolve a caixa como está.
+  const boxVisual = motionOn ? <MotionView scale={pressScale}>{box}</MotionView> : box
 
   if (!label) {
     return (
@@ -73,6 +86,7 @@ export function Checkbox({
         disabled={disabled}
         onPress={handlePress}
         hitSlop={12}
+        {...pressProps}
         className={cn('min-h-touch min-w-touch items-center justify-center', className)}
       >
         {boxVisual}
@@ -91,6 +105,7 @@ export function Checkbox({
       onPress={handlePress}
       disabled={disabled}
       hitSlop={12}
+      {...pressProps}
       className={cn('min-h-touch flex-row items-start gap-3 py-3', disabled && 'opacity-60', className)}
     >
       <View className="pt-px">{boxVisual}</View>

@@ -4,6 +4,28 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ## [Não lançado]
 
+## [1.7.0] - 22/10/2026
+
+### Adicionado
+
+- Opção `motion` do `BrandProvider` (`'off'` | `'on'`, padrão `'off'`), `MotionProvider`, `useMotion` e `motionTokens` na entrada principal (só chaves novas, os mesmos nomes do web): `duration.press/move`, `ease.move/drawer/back`, `spring.settle/sheet/playful`, `scales`, `stagger.cap`. `scale` e `stagger.max` ficam como legado, com os valores de antes.
+- Movimento nos 30 componentes (modal, gaveta, folha, menu, toast, seletor, data, abas, acordeão, etapas, funil, lista, tabela, linha do tempo, botão, chave, caixa, rádio, controle deslizante, nota, indicador, gráfico, progresso, skeleton, estado vazio e alerta), com redução de movimento síncrona e a troca de tela em `fade` quando o sistema pede menos movimento.
+- Telas de comparação `/componentes-motion` e `/dashboard-motion` no menu da vitrine, e `RevealScope` (o gráfico desenha em 900 ms só na entrada do dashboard).
+- Créditos das ferramentas de movimento (Emil Kowalski, MIT; Impeccable, Apache 2.0) no README.
+
+### Alterado
+
+- **O `off` mudou visualmente e no comportamento**: o toque do `Button` passou de 0,98 em 100 ms para 0,97 em 120 ms com `ease-out`; a folha, a gaveta e o menu entram em 320 ms com `ease.drawer` (antes 200 e 250 ms sem curva); o arraste da folha, da gaveta, da `List` e do `Slider` roda na UI thread, com fricção ao puxar para cima (antes um muro), decisão por projeção da velocidade (antes 100 px) e a velocidade do dedo entregue à mola; o progresso determinado anda 200 ms linear (antes 300 ms) e o indeterminado por `translateX`; o skeleton usa os tokens `pulse` e `inOut`; a opção `animation` do `Stack` passa a existir (`default`, ou `fade` com redução de movimento).
+- `on`: o toque não tem mais quique (só a estrela do `Rating` volta com mola); abas e seletor de data trocam o painel sem entrada; o ponto do rádio e o check vão de 0,9 a 1 com opacidade (antes de 0 e de 0,6); o gráfico de rotina desenha em 420 ms uma vez só (antes 900 ms e reiniciava ao girar a tela).
+- 35 das 36 capturas do `off` da vitrine seguem idênticas byte a byte.
+
+### Corrigido
+
+- Texto longo e sem espaço vazava da tela no navegador em `Accordion`, `EmptyState`, `StatCard`, `Modal` e no valor do `Progress` (o "62%" saía cortado do cartão).
+- A redução de movimento do sistema só valia depois do primeiro quadro e do `Promise` do `AccessibilityInfo`; agora vale desde o primeiro quadro e continua reagindo a mudanças com o app aberto.
+- `Skeleton` com `motion="on"` fora de um `BrandProvider` não quebra mais.
+- Simulação dos dois leigos aprovada em 22/10/2026 (Regra um, item 7): reduzida ao delta sobre a 1.6.1, a opção `motion` ligada pela documentação numa tela escrita a partir do clone (comandos e testes de rota verdes, navegador a 390 px no claro e no escuro com o toque, a barra de progresso e o acordeão animando) e no pacote construído com `motionTokens`, `MotionProvider` e `useMotion` tipados e o consumidor compilando, sem lacuna que trave o leigo; duas lacunas de melhoria registradas (teste de créditos no clone limpo e testes da demo com `motion="on"` na raiz).
+
 ## [1.6.1] - 19/10/2026
 
 Correção sobre a 1.6.0, sem mudança de API.

@@ -4,6 +4,7 @@ import { FlatList, Pressable, TextInput, View } from 'react-native'
 import { Check, ChevronDown, Plus, Search, X } from 'lucide-react-native'
 import { Text } from '../internal/text'
 import { PickerPanel } from '../internal/picker-panel'
+import { PressScale } from '../internal/motion-view'
 import { Button } from './button'
 import { Spinner } from './spinner'
 import { cn } from '../../lib/cn'
@@ -360,7 +361,7 @@ export function Select(props: SelectProps) {
           const item = row.option
           const isSelected = multiple ? draft.includes(item.value) : value === item.value
           return (
-            <Pressable
+            <PressScale
               disabled={item.disabled}
               accessibilityState={{ selected: isSelected, disabled: item.disabled }}
               // `aria-selected={isSelected}` foi tentado e revertido: exige `role="option"`, que
@@ -376,6 +377,8 @@ export function Select(props: SelectProps) {
               // do item), só não é anunciada por voz no web.
               onPress={() => (multiple ? toggleDraft(item.value) : commitSingle(item.value))}
               className={cn('min-h-touch flex-row items-center gap-3 rounded-item px-3', item.disabled && 'opacity-50')}
+              outerClassName={cn('min-h-touch justify-center rounded-item', item.disabled && 'opacity-50')}
+              innerClassName="flex-row items-center gap-3 px-3"
             >
               {multiple ? (
                 <View className={cn('size-icon-sm items-center justify-center rounded-item border', isSelected ? 'border-primary bg-primary' : 'border-input bg-card')}>
@@ -392,7 +395,7 @@ export function Select(props: SelectProps) {
                 ) : null}
               </View>
               {!multiple && isSelected ? <Check className="text-primary-text" /> : null}
-            </Pressable>
+            </PressScale>
           )
         }}
         ListFooterComponent={

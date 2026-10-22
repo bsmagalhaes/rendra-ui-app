@@ -1,12 +1,13 @@
 import { cloneElement, createContext, isValidElement, useContext, useState } from 'react'
 import type { ReactElement, ReactNode } from 'react'
-import { Platform, Pressable, View } from 'react-native'
+import { Platform, View } from 'react-native'
 import { Check } from 'lucide-react-native'
 import { Text } from '../internal/text'
 import { cn } from '../../lib/cn'
 import { a11yPresets } from '../../lib/a11y'
 import { useControlledState } from '../../hooks/use-controlled-state'
 import { BottomSheet } from '../internal/bottom-sheet'
+import { PressScale } from '../internal/motion-view'
 
 interface DropdownMenuContextValue {
   open: boolean
@@ -93,7 +94,7 @@ export function DropdownMenuItem({ children, icon, destructive = false, disabled
         ? { accessibilityState: { disabled }, 'aria-current': selected ? ('true' as const) : undefined }
         : { accessibilityState: { disabled, selected } }
   return (
-    <Pressable
+    <PressScale
       accessibilityRole={a11yPresets.menuitem.accessibilityRole}
       {...estado}
       disabled={disabled}
@@ -108,6 +109,13 @@ export function DropdownMenuItem({ children, icon, destructive = false, disabled
         pressed && !disabled && (destructive ? 'bg-destructive-soft' : 'bg-accent'),
         disabled && 'opacity-50',
       )}
+      outerClassName={cn(
+        'min-h-touch justify-center rounded-item',
+        pressed && !disabled && (destructive ? 'bg-destructive-soft' : 'bg-accent'),
+        disabled && 'opacity-50',
+      )}
+      innerClassName="flex-row items-center gap-2 px-3"
+      motionTestID="menu-item-press"
     >
       {icon}
       <Text
@@ -129,7 +137,7 @@ export function DropdownMenuItem({ children, icon, destructive = false, disabled
         {children}
       </Text>
       {selected ? <Check className="ml-auto size-icon-md text-foreground" /> : null}
-    </Pressable>
+    </PressScale>
   )
 }
 

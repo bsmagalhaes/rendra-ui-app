@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
   AccessibilityInfo,
@@ -9,12 +9,17 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native'
-import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler'
+import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler'
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { cn } from '../../lib/cn'
 import { a11yPresets } from '../../lib/a11y'
 import { useReducedMotion } from '../../lib/reduced-motion'
+import { useMotion } from '../../lib/motion/context'
+import { useOverlayMotion } from '../../lib/motion/use-overlay-motion'
+import { useOverlayPan } from '../../lib/motion/use-overlay-pan'
+import { timing } from '../../lib/motion/tokens'
+import { MotionView } from './motion-view'
 
 export interface BottomSheetProps {
   open: boolean
@@ -27,8 +32,6 @@ export interface BottomSheetProps {
   scrollable?: boolean
   testID?: string
 }
-
-const DRAG_CLOSE_THRESHOLD = 100
 
 /**
  * Posição de `translateY` da folha nas duas fases da entrada (bloqueador 2 do veredito do
@@ -45,7 +48,7 @@ export function bottomSheetTranslateY(phase: 'closed' | 'settled', windowHeight:
   return phase === 'settled' ? 0 : windowHeight
 }
 
-export function BottomSheet({
+function BottomSheetStatic({
   open,
   onOpenChange,
   children,
@@ -86,16 +89,17 @@ export function BottomSheet({
   // na posição final, sem nenhuma entrada (o valor já nascia em 0). Corrigido em duas fases: o
   // salto síncrono para `windowHeight` (fora da tela, abaixo) e, um instante depois (`setTimeout`
   // 0, evitando que as duas mutações colapsem no mesmo commit da UI Runtime e a entrada nunca
-  // apareça), a animação real até 0 com `withTiming` (200ms, ou 0 sob `reduced motion`, mesmo
+  // apareça), a animação real até 0 com `withTiming` (token `open` da folha: `slow` com a curva `drawer`, ou 0 sob `reduced motion`, mesmo
   // padrão do `Switch`).
   useEffect(() => {
     if (open) {
       translateY.set(bottomSheetTranslateY('closed', windowHeightRef.current))
       const id = setTimeout(() => {
         translateY.set(
-          withTiming(bottomSheetTranslateY('settled', windowHeightRef.current), {
-            duration: reducedMotionRef.current ? 0 : 200,
-          }),
+          withTiming(
+            bottomSheetTranslateY('settled', windowHeightRef.current),
+            reducedMotionRef.current ? { duration: 0 } : timing('slow', 'drawer'),
+          ),
         )
       }, 0)
       AccessibilityInfo.announceForAccessibility(accessibilityLabel ?? 'Painel aberto')
@@ -103,22 +107,22 @@ export function BottomSheet({
     }
   }, [open, accessibilityLabel, translateY])
 
-  const pan = Gesture.Pan()
-    .withTestId(`${testID ?? 'bottom-sheet'}-drag-handle`)
-    .runOnJS(true)
-    .onUpdate((e) => {
-      translateY.set(Math.max(0, e.translationY))
-    })
-    .onEnd((e) => {
-      if (e.translationY > DRAG_CLOSE_THRESHOLD) {
-        onOpenChange(false)
-      } else {
-        translateY.set(withTiming(0, { duration: 150 }))
-      }
-    })
+  // Mesmo gesto do caminho `on`: worklet, fricção ao puxar para cima, decisão por projeção, mola com a
+  // velocidade do dedo ao soltar. A altura real vem do `onLayout` (é a base dos 40%).
+  const [sheetHeight, setSheetHeight] = useState(windowHeight / 2)
+  const requestClose = useCallback(() => onOpenChange(false), [onOpenChange])
+  const pan = useOverlayPan({
+    axis: 'y',
+    direction: 1,
+    size: sheetHeight,
+    offset: translateY,
+    onDismiss: requestClose,
+    testID: `${testID ?? 'bottom-sheet'}-drag-handle`,
+    afterDismiss: 'return',
+  })
 
   const sheetStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
+    transform: [{ translateY: translateY.get() }],
     maxHeight: windowHeight * 0.8,
     paddingBottom: Math.max(16, insets.bottom),
   }))
@@ -142,7 +146,11 @@ export function BottomSheet({
             className="flex-1"
             onPress={() => onOpenChange(false)}
           />
-          <Animated.View testID={testID ? `${testID}-sheet` : undefined} style={sheetStyle}>
+          <Animated.View
+            testID={testID ? `${testID}-sheet` : undefined}
+            style={sheetStyle}
+            onLayout={(event) => setSheetHeight(event.nativeEvent.layout.height)}
+          >
             <View className="rounded-t-surface border-t border-border bg-popover shadow-lg shrink">
               <GestureDetector gesture={pan}>
                 <View
@@ -175,4 +183,107 @@ export function BottomSheet({
       </GestureHandlerRootView>
     </RNModal>
   )
+}
+
+/**
+ * Caminho `motion="on"`: entrada por spring, saída animada a partir de onde o dedo soltou e pan
+ * worklet. Todo fechamento chama `onOpenChange(false)` na hora; o `RNModal` só desmonta ao fim da
+ * saída (`usePresence`). Com movimento reduzido, só opacidade.
+ */
+function BottomSheetMotion({
+  open,
+  onOpenChange,
+  children,
+  accessibilityLabel,
+  contentContainerClassName,
+  header,
+  footer,
+  scrollable = true,
+  testID,
+}: BottomSheetProps) {
+  const insets = useSafeAreaInsets()
+  const { height: windowHeight } = useWindowDimensions()
+  const reducedMotion = useReducedMotion()
+  const dragId = `${testID ?? 'bottom-sheet'}-drag-handle`
+  // Altura real da folha (onLayout): é a distância até sair da tela e a base do limiar de fechar.
+  // Antes da primeira medida, metade da janela.
+  const [sheetHeight, setSheetHeight] = useState(windowHeight / 2)
+  const requestClose = useCallback(() => onOpenChange(false), [onOpenChange])
+  const { mounted, offset, backdrop, contentOpacity, gesture } = useOverlayMotion({
+    open,
+    axis: 'y',
+    direction: 1,
+    size: sheetHeight,
+    reduced: reducedMotion,
+    onDismiss: requestClose,
+    testID: dragId,
+  })
+
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: offset.get() }],
+    opacity: contentOpacity.get(),
+    maxHeight: windowHeight * 0.8,
+    paddingBottom: Math.max(16, insets.bottom),
+  }))
+
+  useEffect(() => {
+    if (open) AccessibilityInfo.announceForAccessibility(accessibilityLabel ?? 'Painel aberto')
+  }, [open, accessibilityLabel])
+
+  return (
+    <RNModal transparent animationType="none" visible={mounted} onRequestClose={requestClose} testID={testID}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View className="flex-1">
+          <View className="absolute inset-0" pointerEvents="none">
+            <MotionView fill opacity={backdrop} testID={testID ? `${testID}-backdrop` : undefined}>
+              <View className="size-full bg-overlay" />
+            </MotionView>
+          </View>
+          <Pressable
+            testID={testID ? `${testID}-overlay` : undefined}
+            accessibilityRole={a11yPresets.button.accessibilityRole}
+            accessibilityLabel="Fechar"
+            className="flex-1"
+            onPress={requestClose}
+          />
+          <Animated.View
+            testID={testID ? `${testID}-sheet` : undefined}
+            pointerEvents={open ? 'auto' : 'none'}
+            style={sheetStyle}
+            onLayout={(event) => setSheetHeight(event.nativeEvent.layout.height)}
+          >
+            <View className="rounded-t-surface border-t border-border bg-popover shadow-lg shrink">
+              <GestureDetector gesture={gesture}>
+                <View testID={dragId} className="my-2 h-1 w-12 self-center rounded-full bg-border" />
+              </GestureDetector>
+              <KeyboardAvoidingView
+                behavior="padding"
+                className="shrink"
+                testID={`${testID ?? 'bottom-sheet'}-teclado`}
+              >
+                {header}
+                {scrollable ? (
+                  <ScrollView
+                    tabIndex={0}
+                    testID={`${testID ?? 'bottom-sheet'}-rolagem`}
+                    contentContainerClassName={cn('p-1', contentContainerClassName)}
+                  >
+                    {children}
+                  </ScrollView>
+                ) : (
+                  <View className="shrink">{children}</View>
+                )}
+                {footer}
+              </KeyboardAvoidingView>
+            </View>
+          </Animated.View>
+        </View>
+      </GestureHandlerRootView>
+    </RNModal>
+  )
+}
+
+export function BottomSheet(props: BottomSheetProps) {
+  const mode = useMotion()
+  return mode === 'on' ? <BottomSheetMotion {...props} /> : <BottomSheetStatic {...props} />
 }

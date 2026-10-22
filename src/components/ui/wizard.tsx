@@ -7,6 +7,9 @@ import { gapClass } from '../layout/tokens'
 import { cn } from '../../lib/cn'
 import { ActionBar } from './action-bar'
 import { Progress } from './progress'
+import { MotionView } from '../internal/motion-view'
+import { slideIn } from '../../lib/motion/slide'
+import { useMotionPreset } from '../../lib/motion/use-motion-preset'
 
 export interface WizardStep {
   id: string
@@ -84,6 +87,27 @@ export interface WizardProps {
 }
 
 /**
+ * Troca de etapa em `motion="on"`: o conteúdo novo entra com um deslocamento curto na direção da
+ * mudança mais fade (só fade com movimento reduzido). Em `off` devolve os filhos como estão. Chama
+ * sempre os mesmos hooks, então o seletor pode alternar sem trocar a contagem de hooks.
+ */
+function StepTransition({ index, children }: { index: number; children: ReactNode }) {
+  const { active, reduced } = useMotionPreset()
+  const [last, setLast] = useState(index)
+  const [direction, setDirection] = useState<'left' | 'right'>('left')
+  if (index !== last) {
+    setDirection(index > last ? 'left' : 'right')
+    setLast(index)
+  }
+  if (!active) return <>{children}</>
+  return (
+    <MotionView key={index} testID="wizard-etapa" entering={slideIn(direction, reduced)}>
+      {children}
+    </MotionView>
+  )
+}
+
+/**
  * Cadastro em etapas, com validação por etapa e rodapé Voltar / Avançar. Não é controlável: a
  * etapa atual nasce em 0 e só muda por dentro. O estado de cada etapa que precisa sobreviver ao
  * "Voltar" fica no consumidor, porque só o filho da etapa atual é montado.
@@ -141,7 +165,9 @@ export function Wizard({
   return (
     <View dataSet={{ rendra: 'WIZ-001' }} className={cn('min-w-0 flex-col', gapClass[gap])}>
       <Stepper steps={steps} current={current} errors={errors} />
-      <View className="min-w-0 flex-col gap-6">{children[current]}</View>
+      <View className="min-w-0 flex-col gap-6">
+        <StepTransition index={current}>{children[current]}</StepTransition>
+      </View>
       <ActionBar
         testID="wizard-rodape"
         sticky={stickyFooter}

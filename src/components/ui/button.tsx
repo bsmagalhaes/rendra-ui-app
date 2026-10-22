@@ -8,6 +8,8 @@ import { cn } from '../../lib/cn'
 import { a11yPresets } from '../../lib/a11y'
 import { useReducedMotion } from '../../lib/reduced-motion'
 import { resolveCatalogCode } from '../../catalog/components'
+import { pressTiming } from '../../lib/motion/tokens'
+import { motionTokens } from '../../theme/motion'
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'link'
 export type ButtonSize = 'sm' | 'md' | 'lg'
@@ -109,7 +111,7 @@ export const Button = forwardRef<View, ButtonProps>(function Button(
   const isLinkVariant = variant === 'link'
   const code = resolveCatalogCode('Button', { variant })
 
-  const scaleStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }))
+  const scaleStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }))
 
   const rootClassName = cn(
     'flex-row shrink-0 items-center justify-center gap-2 rounded-control',
@@ -148,12 +150,18 @@ export const Button = forwardRef<View, ButtonProps>(function Button(
       disabled={isDisabled}
       onPressIn={(event) => {
         setPressed(true)
-        if (!reducedMotion) scale.value = withTiming(0.98, { duration: 100 })
+        if (!reducedMotion) {
+          // Token `press` (0,97, 120 ms, `ease-out`), igual em `on` e `off`: sem mola nem quique. O
+          // `pressed` por estado segue só para o realce de cor.
+          scale.set(withTiming(motionTokens.scales.press, pressTiming()))
+        }
         onPressIn?.(event)
       }}
       onPressOut={(event) => {
         setPressed(false)
-        if (!reducedMotion) scale.value = withTiming(1, { duration: 100 })
+        if (!reducedMotion) {
+          scale.set(withTiming(1, pressTiming()))
+        }
         onPressOut?.(event)
       }}
       className={rootClassName}

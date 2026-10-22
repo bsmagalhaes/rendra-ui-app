@@ -333,6 +333,8 @@ export function DatePicker(props: DatePickerProps) {
             </>
           )}
         </View>
+        {/* Troca de modo (dias, meses, anos) é frequente: sem entrada, o conteúdo troca na hora. */}
+        <>
         {pickerMode === 'days' ? (
           <>
             <View className="flex-row">
@@ -456,6 +458,7 @@ export function DatePicker(props: DatePickerProps) {
             })}
           </View>
         )}
+        </>
       </View>
     </PickerPanel>
   )

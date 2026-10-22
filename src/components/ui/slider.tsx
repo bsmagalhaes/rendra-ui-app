@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
 import { View } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
-import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated'
+import Animated, { useAnimatedReaction, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
+import { scheduleOnRN } from 'react-native-worklets'
 import { Text } from '../internal/text'
 import { cn } from '../../lib/cn'
 import { a11yPresets } from '../../lib/a11y'
 import { useControlledState } from '../../hooks/use-controlled-state'
+import { useMotionPreset } from '../../lib/motion/use-motion-preset'
+import { pressTiming } from '../../lib/motion/tokens'
+import { motionTokens } from '../../theme/motion'
 
 export interface SliderProps {
   value?: number[]
@@ -25,6 +29,7 @@ export interface SliderProps {
 const THUMB_TOUCH = 44
 
 function clampToStep(raw: number, min: number, max: number, step: number) {
+  'worklet'
   const stepped = min + Math.round((raw - min) / step) * step
   return Math.min(max, Math.max(min, stepped))
 }
@@ -69,26 +74,58 @@ function Thumb({
 }) {
   const startValue = useSharedValue(value)
   const liveValue = useSharedValue(value)
+  const lastCommitted = useSharedValue(value)
+  const { active: motionOn, reduced } = useMotionPreset()
+  const grow = useSharedValue(1)
+  // Calculada fora do worklet: `pressTiming()` é uma função da JS e não roda na UI thread.
+  const pressConfig = pressTiming()
 
   useEffect(() => {
     liveValue.set(value)
-  }, [value, liveValue])
+    lastCommitted.set(value)
+  }, [value, liveValue, lastCommitted])
+
+  // O arraste é worklet: a alça segue o dedo na UI thread (`liveValue`), sem `setState` por quadro. O
+  // React só é avisado quando o valor em PASSOS muda (limiar), por `scheduleOnRN` numa reação, nunca
+  // dentro do `onUpdate`.
+  useAnimatedReaction(
+    () => liveValue.get(),
+    (current) => {
+      if (current === lastCommitted.get()) return
+      lastCommitted.set(current)
+      scheduleOnRN(onCommit, index, current)
+    },
+    [onCommit, index],
+  )
 
   const gesture = Gesture.Pan()
     .withTestId(`${testID ?? 'slider'}-thumb-${index}`)
-    .runOnJS(true)
     .enabled(!disabled)
     .onBegin(() => {
-      startValue.set(value)
+      'worklet'
+      startValue.set(liveValue.get())
     })
     .onUpdate((e) => {
+      'worklet'
       const raw = startValue.get() + (e.translationX / width) * (max - min)
       const bounded = clampToStep(raw, min, max, step)
       const lowerBound = index > 0 ? values[index - 1] : min
       const upperBound = index < values.length - 1 ? values[index + 1] : max
-      const next = Math.min(upperBound, Math.max(lowerBound, bounded))
-      liveValue.set(next)
-      onCommit(index, next)
+      liveValue.set(Math.min(upperBound, Math.max(lowerBound, bounded)))
+    })
+
+  // `on`: gesto extra, também worklet, composto com o de sempre; só cresce a alça enquanto
+  // o dedo está nela. Fora de `on` o `GestureDetector` recebe o mesmo objeto de gesto de sempre.
+  const growGesture = Gesture.Pan()
+    .withTestId(`${testID ?? 'slider'}-thumb-${index}-escala`)
+    .enabled(!disabled && !reduced)
+    .onBegin(() => {
+      'worklet'
+      grow.set(withTiming(motionTokens.scales.bump, pressConfig))
+    })
+    .onFinalize(() => {
+      'worklet'
+      grow.set(withTiming(1, pressConfig))
     })
 
   // Posição e tamanho fixos (`position`, `left`, `top`, `height`, `width`, `alignItems`,
@@ -108,12 +145,14 @@ function Thumb({
       width: THUMB_TOUCH,
       alignItems: 'center',
       justifyContent: 'center',
-      transform: [{ translateX: thumbTranslateX(ratio, width) }],
+      transform: motionOn
+        ? [{ translateX: thumbTranslateX(ratio, width) }, { scale: grow.get() }]
+        : [{ translateX: thumbTranslateX(ratio, width) }],
     }
   })
 
   return (
-    <GestureDetector gesture={gesture}>
+    <GestureDetector gesture={motionOn ? Gesture.Simultaneous(gesture, growGesture) : gesture}>
       <Animated.View
         testID={`${testID ?? 'slider'}-thumb-${index}-alca`}
         style={style}

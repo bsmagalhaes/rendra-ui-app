@@ -1,11 +1,13 @@
 import { useId } from 'react'
 import type { ReactNode } from 'react'
 import { Pressable, View } from 'react-native'
-import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated'
+import Animated, { type WithTimingConfig, useAnimatedStyle, withTiming } from 'react-native-reanimated'
 import { Text } from '../internal/text'
 import { cn } from '../../lib/cn'
 import { a11yPresets } from '../../lib/a11y'
 import { useReducedMotion } from '../../lib/reduced-motion'
+import { useMotion } from '../../lib/motion/context'
+import { timing } from '../../lib/motion/tokens'
 import { useControlledState } from '../../hooks/use-controlled-state'
 
 export interface SwitchProps {
@@ -18,6 +20,17 @@ export interface SwitchProps {
   id?: string
   accessibilityLabel?: string
   className?: string
+}
+
+/**
+ * Animação do polegar: `on` assenta em `base` (200 ms) pela curva `move`, sem mola (um toggle de
+ * 150 a 200 ms, e a mola de antes levava cerca de 230 ms para assentar); fora de `on` fica o
+ * `withTiming` de sempre (200 ms), e com movimento reduzido o polegar troca seco (0). Pura, para o
+ * teste distinguir os caminhos.
+ */
+export function switchThumbMotion(motionOn: boolean, reducedMotion: boolean): { timing: WithTimingConfig } {
+  if (reducedMotion) return { timing: { duration: 0 } }
+  return motionOn ? { timing: timing('base', 'move') } : { timing: { duration: 200 } }
 }
 
 export function Switch({
@@ -35,9 +48,12 @@ export function Switch({
   const generatedId = useId()
   const id = idProp ?? `sw${generatedId}`
   const reducedMotion = useReducedMotion()
+  const motionOn = useMotion() === 'on'
 
+  // `on`: 200 ms pela curva `move`; sem `on` o `withTiming` de sempre (200 ms); reduzido troca seco (0).
+  const thumbMotion = switchThumbMotion(motionOn, reducedMotion)
   const thumbStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: withTiming(checked ? 24 : 0, { duration: reducedMotion ? 0 : 200 }) }],
+    transform: [{ translateX: withTiming(checked ? 24 : 0, thumbMotion.timing) }],
   }))
 
   function handlePress() {

@@ -11,6 +11,8 @@ import { RendraRouterBridge, ModelCodeFromUrl } from '../src/router-bridge'
 import { Toaster } from '../src/components/ui'
 import { RendraSplash } from '../src/components/splash/rendra-splash'
 import { useRendraFonts } from '../src/theme/fonts'
+import { useReducedMotion } from '../src/lib/reduced-motion'
+import { screenAnimation } from '../src/lib/motion/screen-animation'
 import { registerIconInterop } from '../src/lib/icon-interop'
 import '../global.css'
 
@@ -41,6 +43,7 @@ function SplashGate() {
 
 export default function RootLayout() {
   const [fontsLoaded] = useRendraFonts()
+  const reducedMotion = useReducedMotion()
 
   if (!fontsLoaded) return null
 
@@ -55,7 +58,7 @@ export default function RootLayout() {
                 Sem SafeAreaView: o inset superior é do cabeçalho do AppShell (grupo `(shell)`) e,
                 nas telas fora do shell, de um SafeAreaView próprio de cada tela. */}
             <View className="flex-1 bg-background" testID="raiz-rotas">
-              <Stack screenOptions={{ headerShown: false }} />
+              <Stack screenOptions={{ headerShown: false, animation: screenAnimation(reducedMotion) }} />
             </View>
             <SplashGate />
             <Toaster />

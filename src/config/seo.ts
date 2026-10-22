@@ -140,6 +140,18 @@ const rotasFixas: RouteSeo[] = [
     description: 'Criação de conta de exemplo do Rendra App, com máscara de telefone e aceite dos termos de uso.',
     indexable: false,
   },
+  {
+    path: '/componentes-motion',
+    title: `Componentes com motion · ${siteSeo.productName}`,
+    description: 'Tela experimental de comparação dos 30 componentes com movimento, com chave para ligar e desligar o motion.',
+    indexable: false,
+  },
+  {
+    path: '/dashboard-motion',
+    title: `Dashboard com motion · ${siteSeo.productName}`,
+    description: 'Tela experimental de dashboard com entrada em cascata e contadores, com chave para ligar e desligar o motion.',
+    indexable: false,
+  },
 ]
 
 const rotasDeGrupo: RouteSeo[] = SEO_GROUPS.map((grupo) => ({

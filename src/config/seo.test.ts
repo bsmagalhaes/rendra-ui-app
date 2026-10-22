@@ -93,7 +93,7 @@ describe('SEO das rotas da demonstração (P3.16)', () => {
     expect(routeSeo.find((r) => r.path === '/login')?.indexable).toBe(true)
   })
 
-  it.each(['/esqueci-senha', '/verificacao', '/nova-senha', '/cadastre-se'])('%s não é indexada', (rota) => {
+  it.each(['/esqueci-senha', '/verificacao', '/nova-senha', '/cadastre-se', '/dashboard-motion'])('%s não é indexada', (rota) => {
     const seo = routeSeo.find((r) => r.path === rota)
     expect(seo).toBeDefined()
     expect(seo?.indexable).toBe(false)

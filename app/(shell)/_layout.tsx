@@ -4,6 +4,8 @@ import { buildNavigation, exampleUser } from '../../src/config/navigation'
 import { useClientes } from '../../src/demo/clients-store'
 import { useNaoLidas } from '../../src/demo/tickets-store'
 import { notifications } from '../../src/mocks/notifications'
+import { useReducedMotion } from '../../src/lib/reduced-motion'
+import { screenAnimation } from '../../src/lib/motion/screen-animation'
 
 // Fora do componente: um objeto novo a cada render recalcularia o contexto do shell. O sino copia a
 // lista só na montagem, então uma constante de módulo deixa isso explícito. O mock não tem tipo nem
@@ -22,9 +24,10 @@ export default function ShellLayout() {
   const router = useRouter()
   const total = useClientes().length
   const naoLidas = useNaoLidas()
+  const reducedMotion = useReducedMotion()
   return (
     <AppShell navigation={buildNavigation(total, naoLidas)} user={exampleUser} notifications={notificacoesDoShell} onLogout={() => router.replace('/login')}>
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false, animation: screenAnimation(reducedMotion) }} />
     </AppShell>
   )
 }
