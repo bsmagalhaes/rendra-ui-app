@@ -1,6 +1,6 @@
 {
   "name": "@rendra-ui/app",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Rendra: design system e boilerplate mobile, em React Native (Expo) com Expo Router e NativeWind.",
   "main": "expo-router/entry",
   "author": {

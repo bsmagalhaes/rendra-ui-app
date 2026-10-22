@@ -340,21 +340,37 @@ suite('CHANGELOG 1.6.1 (Switch no navegador)', () => {
 
 suite('CHANGELOG 1.7.0 (movimento opcional)', () => {
   const versao = entrada('1.7.0', '1.6.1')
-  it('a versão gravada é a 1.7.0 nos dois manifestos', () => {
-    const pacote = JSON.parse(ler('package.json')) as { version: string }
-    const app = JSON.parse(ler('app.json')) as { expo: { version: string } }
-    expect(pacote.version).toBe('1.7.0')
-    expect(app.expo.version).toBe('1.7.0')
-  })
-
-  it('a entrada abre com a data, fica acima da 1.6.1 e a seção Não lançado fica vazia acima dela', () => {
+  it('a entrada abre com a data e fica acima da 1.6.1', () => {
     expect(changelog.indexOf('## [1.7.0] - 22/10/2026')).toBeGreaterThan(-1)
     expect(changelog.indexOf('## [1.7.0]')).toBeLessThan(changelog.indexOf('## [1.6.1]'))
-    expect(changelog.indexOf('## [Não lançado]')).toBeLessThan(changelog.indexOf('## [1.7.0]'))
-    expect(changelog.slice(changelog.indexOf('## [Não lançado]'), changelog.indexOf('## [1.7.0]')).trim()).toBe('## [Não lançado]')
   })
 
   it('registra a simulação dos leigos aprovada', () => {
     expect(versao).toMatch(/Simulação dos dois leigos aprovada em 22\/10\/2026/)
+  })
+})
+
+suite('CHANGELOG 1.8.0 (entrada animada no navegador)', () => {
+  const versao = entrada('1.8.0', '1.7.0')
+  it('a versão gravada é a 1.8.0 nos dois manifestos', () => {
+    const pacote = JSON.parse(ler('package.json')) as { version: string }
+    const app = JSON.parse(ler('app.json')) as { expo: { version: string } }
+    expect(pacote.version).toBe('1.8.0')
+    expect(app.expo.version).toBe('1.8.0')
+  })
+
+  it('a entrada abre com a data, fica acima da 1.7.0 e a seção Não lançado fica vazia acima dela', () => {
+    expect(changelog.indexOf('## [1.8.0] - 22/10/2026')).toBeGreaterThan(-1)
+    expect(changelog.indexOf('## [1.8.0]')).toBeLessThan(changelog.indexOf('## [1.7.0]'))
+    expect(changelog.indexOf('## [Não lançado]')).toBeLessThan(changelog.indexOf('## [1.8.0]'))
+    expect(changelog.slice(changelog.indexOf('## [Não lançado]'), changelog.indexOf('## [1.8.0]')).trim()).toBe('## [Não lançado]')
+  })
+
+  it('registra a simulação dos leigos aprovada para esta versão', () => {
+    expect(versao).toMatch(/Simulação dos dois leigos aprovada em 22\/10\/2026/)
+  })
+
+  it('não cita o processo interno', () => {
+    expect(versao).not.toMatch(/processo\/|docs\/superpowers/)
   })
 })

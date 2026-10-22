@@ -173,13 +173,36 @@ export interface MotionPresenceProps {
   /**
    * No navegador a Reanimated ignora o worklet de `entering` (e um `Keyframe` deixa o nó em
    * `position:absolute` ao fim), então a entrada vira valores animados a partir do `spec` do preset
-   * (deslocamento, duração, atraso e curva). Sem efeito no nativo nem sem `enter`.
+   * (deslocamento, duração, atraso e curva). Padrão `true`; passe `false` para desligar. Sem efeito
+   * no nativo nem sem `enter`. No navegador o `layout` segue junto, mas o `exit` por worklet não
+   * (a Reanimated só avisa e não anima): use `webExit`.
    */
   webEnter?: boolean
+  /**
+   * Saída só do navegador, por builder pré-definido (`FadeOutDown`, `FadeOut`), o único tipo de saída
+   * que a Reanimated web anima. Recebe `reduced`; ignorada no nativo, que usa `exit`.
+   */
+  webExit?: (reduced: boolean) => BaseAnimationBuilder | typeof BaseAnimationBuilder
 }
 
 /** Entrada do navegador por valores animados: progresso 0 a 1 com atraso, sem Layout Animation. */
-function WebEnter({ spec, testID, fill, fillWidth, children }: { spec: MotionSpec; testID?: string; fill?: boolean; fillWidth?: boolean; children: ReactNode }) {
+function WebEnter({
+  spec,
+  testID,
+  fill,
+  fillWidth,
+  layout,
+  exiting,
+  children,
+}: {
+  spec: MotionSpec
+  testID?: string
+  fill?: boolean
+  fillWidth?: boolean
+  layout?: MotionViewProps['layout']
+  exiting?: MotionViewProps['exiting']
+  children: ReactNode
+}) {
   const progress = useSharedValue(0)
   const { translateX, translateY, scale, delay, duration, easing } = spec
   useEffect(() => {
@@ -193,6 +216,8 @@ function WebEnter({ spec, testID, fill, fillWidth, children }: { spec: MotionSpe
       fill={fill}
       fillWidth={fillWidth}
       testID={testID}
+      layout={layout}
+      exiting={exiting}
       opacity={progress}
       translateX={translateX !== undefined ? x : undefined}
       translateY={translateY !== undefined ? y : undefined}
@@ -208,14 +233,22 @@ function WebEnter({ spec, testID, fill, fillWidth, children }: { spec: MotionSpe
  * em um `MotionView` com os presets de entrada, saída e layout. Chama sempre os mesmos hooks, então
  * alternar o seletor não muda a contagem de hooks.
  */
-export function MotionPresence({ children, enter, exit, layout, fill, fillWidth, testID, resetKey, webEnter }: MotionPresenceProps) {
+export function MotionPresence({ children, enter, exit, layout, fill, fillWidth, testID, resetKey, webEnter = true, webExit }: MotionPresenceProps) {
   const { active, reduced } = useMotionPreset()
   if (!active) return <>{children}</>
   const entering = enter?.(reduced)
   const spec = (entering as { spec?: MotionSpec } | undefined)?.spec
   if (webEnter && Platform.OS === 'web' && spec) {
     return (
-      <WebEnter key={resetKey} spec={spec} testID={testID} fill={fill} fillWidth={fillWidth}>
+      <WebEnter
+        key={resetKey}
+        spec={spec}
+        testID={testID}
+        fill={fill}
+        fillWidth={fillWidth}
+        layout={layout ? layoutTransition() : undefined}
+        exiting={webExit?.(reduced)}
+      >
         {children}
       </WebEnter>
     )

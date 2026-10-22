@@ -65,7 +65,7 @@ export function Checkbox({
       {isIndeterminate ? (
         <Minus className="text-primary-foreground" />
       ) : isChecked ? (
-        <MotionPresence enter={checkIn}>
+        <MotionPresence testID={`${id}-check`} enter={checkIn}>
           <Check className="text-primary-foreground" />
         </MotionPresence>
       ) : null}

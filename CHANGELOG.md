@@ -4,6 +4,21 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ## [Não lançado]
 
+## [1.8.0] - 22/10/2026
+
+### Alterado
+
+- Em `motion="on"`, a entrada animada passa a valer no navegador para todo componente que a tem: `Alert`, `Checkbox`, `EmptyState`, `StatCard` (valor em texto livre e com movimento reduzido), `Timeline`, `Wizard` (troca de etapa) e `Toast`. A Reanimated ignora o worklet de `entering` no navegador, então esses componentes não animavam a entrada ali (e o `Toast` em `on` ficava pior que em `off`). A entrada agora usa os mesmos valores animados do dashboard (`webEnter` virou o padrão do `MotionPresence`), com deslocamento, duração, atraso e curva dos presets, e só opacidade com movimento reduzido. O `off` e o nativo não mudam.
+- `Toast` no navegador em `on`: entrada de 16 px com fade, pilha que reacomoda (`layout`) e saída por fade em 120 ms (`FadeOutDown`, ou `FadeOut` com movimento reduzido).
+- `testID` novos, só em `on`: `<testID>-anim` (`Alert`), `<id>-check` (`Checkbox`), `<testID>-anim-icone|titulo|descricao|acoes` (`EmptyState`), `<testID>-valor-anim` (`StatCard`) e `toast-anim-<id>` (`Toast`).
+
+### Limites conhecidos
+
+- `List` e `Kanban` seguem sem entrada de propósito: entrada item a item em lista virtualizada, que remonta a célula ao rolar, é interação frequente e custa quadros no navegador; só reacomodam por `layout`.
+- A saída por worklet (`fadeOut` do `Alert`) não anima no navegador (a Reanimated só avisa); o nó some na hora, como já era.
+- No navegador, o `Toast` em `on` registra no console de desenvolvimento o aviso da Reanimated "may be overwritten by a layout animation" (entrada por valores animados e `layout` no mesmo nó); medido em 390 px, a pilha reacomoda sem salto.
+- Simulação dos dois leigos aprovada em 22/10/2026 (Regra um, item 7): reduzida ao delta sobre a 1.7.0, a entrada animada no navegador provada numa tela escrita a partir do clone com `motion="on"`, `Alert` e `EmptyState` (comandos e testes de rota verdes com os `testID` novos, navegador a 390 px no claro e no escuro com o alerta entrando e o estado vazio em cascata, na carga e nas remontagens, sem erro de página) e no pacote construído com o consumidor compilando, sem lacuna que trave o leigo; uma lacuna de melhoria repetida da 1.7.0 (testes da demo com `motion="on"` na raiz) e uma observação de documentação (`bg-background` nas telas de rota).
+
 ## [1.7.0] - 22/10/2026
 
 ### Adicionado

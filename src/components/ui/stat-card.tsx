@@ -56,7 +56,7 @@ export function statCardLabel({
  * Valor do cartão. `off`: o `Text` de sempre. `on`: conta até o valor quando ele é número ou string
  * pt-BR com número (nativo e navegador; sem movimento reduzido); fora disso só aparece com fade.
  */
-function StatValue({ value }: { value: ReactNode }) {
+function StatValue({ value, testID }: { value: ReactNode; testID?: string }) {
   const { active, reduced } = useMotionPreset()
   const text = (
     <Text weight="semibold" className="text-2xl text-foreground">
@@ -66,7 +66,11 @@ function StatValue({ value }: { value: ReactNode }) {
   if (!active) return text
   const countable = !reduced ? parseCountable(value) : null
   if (countable) return <MotionCountText countable={countable} />
-  return <MotionPresence enter={fadeIn}>{text}</MotionPresence>
+  return (
+    <MotionPresence testID={testID ? `${testID}-valor-anim` : undefined} enter={fadeIn}>
+      {text}
+    </MotionPresence>
+  )
 }
 
 export function StatCard({
@@ -127,7 +131,7 @@ export function StatCard({
         {loading ? (
           <Skeleton testID={testID ? `${testID}-skeleton-valor` : undefined} className="h-8 w-24" />
         ) : (
-          <StatValue value={value} />
+          <StatValue value={value} testID={testID} />
         )}
         {loading ? (
           <Skeleton testID={testID ? `${testID}-skeleton-variacao` : undefined} className="h-3 w-16" />

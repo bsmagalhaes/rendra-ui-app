@@ -7,9 +7,8 @@ import { gapClass } from '../layout/tokens'
 import { cn } from '../../lib/cn'
 import { ActionBar } from './action-bar'
 import { Progress } from './progress'
-import { MotionView } from '../internal/motion-view'
+import { MotionPresence } from '../internal/motion-view'
 import { slideIn } from '../../lib/motion/slide'
-import { useMotionPreset } from '../../lib/motion/use-motion-preset'
 
 export interface WizardStep {
   id: string
@@ -88,22 +87,21 @@ export interface WizardProps {
 
 /**
  * Troca de etapa em `motion="on"`: o conteúdo novo entra com um deslocamento curto na direção da
- * mudança mais fade (só fade com movimento reduzido). Em `off` devolve os filhos como estão. Chama
- * sempre os mesmos hooks, então o seletor pode alternar sem trocar a contagem de hooks.
+ * mudança mais fade (só fade com movimento reduzido). Em `off` devolve os filhos como estão (a porta
+ * `MotionPresence` não cria nó). No navegador a entrada vai por valores animados, e cada troca de
+ * etapa remonta o envoltório (`resetKey`).
  */
 function StepTransition({ index, children }: { index: number; children: ReactNode }) {
-  const { active, reduced } = useMotionPreset()
   const [last, setLast] = useState(index)
   const [direction, setDirection] = useState<'left' | 'right'>('left')
   if (index !== last) {
     setDirection(index > last ? 'left' : 'right')
     setLast(index)
   }
-  if (!active) return <>{children}</>
   return (
-    <MotionView key={index} testID="wizard-etapa" entering={slideIn(direction, reduced)}>
+    <MotionPresence resetKey={String(index)} testID="wizard-etapa" enter={(r) => slideIn(direction, r)}>
       {children}
-    </MotionView>
+    </MotionPresence>
   )
 }
 

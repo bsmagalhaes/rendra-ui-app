@@ -48,6 +48,8 @@ Trocar marca é sempre: 4 cores, degradê, modelo, nome e logotipo. Nunca mexer 
 
 Movimento é opt-in: `<BrandProvider motion="on">` liga, `'off'` é o padrão. A linguagem é a mesma do design system web (`motionTokens`): toque 120 ms em `ease.out` e escala 0,97 sem quique; entrada de overlay em `base` (200 ms) ou `slow` com `ease.drawer`; saída mais curta que a entrada; nada abaixo de 0,9 de escala em uso frequente; troca de aba e de modo sem entrada; redução de movimento deixa só a opacidade. Toda duração e curva vêm de `src/theme/motion.ts` (nenhum literal nos componentes: `src/lib/motion/linguagem-unica.test.ts`), e os gestos rodam em worklet, sem `setState` por quadro (`src/lib/motion/ui-thread.test.ts`). Valores compartilhados com `.get()/.set()`, volta ao JS só por `scheduleOnRN` no fim do gesto.
 
+No navegador, a Reanimated ignora o worklet de `entering` e de `exiting`: toda entrada de `MotionPresence` vira valores animados (`webEnter`, padrão `true`; opacidade, deslocamento e escala a partir do `spec` do preset), e a saída só anima por builder pré-definido (`webExit`, o do Toast). Alert, Checkbox, EmptyState, StatCard (fade), Timeline, Wizard e Toast entram assim; `List` e `Kanban` não têm entrada de propósito: entrada item a item em lista virtualizada, que remonta a célula ao rolar, é interação frequente e custa quadros na thread JS do navegador, então só reacomodam por `layout`. A saída por worklet (`fadeOut` do Alert, `slideOut` do Toast no nativo) não anima no navegador: limite conhecido. Todo `style` animado continua só em `motion-view.tsx`.
+
 ## Proibido
 
 - Valor arbitrário em classe Tailwind (`p-[13px]`, `w-[220px]`).

@@ -1,15 +1,16 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { AccessibilityInfo, Pressable, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import Animated, { FadeInUp, FadeOutDown } from 'react-native-reanimated'
+import Animated, { FadeInUp, FadeOut, FadeOutDown } from 'react-native-reanimated'
 import { BrandFeedbackIcon } from './brand-feedback-icon'
 import { Text } from '../internal/text'
 import { a11yPresets } from '../../lib/a11y'
 import { cn } from '../../lib/cn'
 import { useReducedMotion } from '../../lib/reduced-motion'
 import { useMotion } from '../../lib/motion/context'
+import { MotionPresence } from '../internal/motion-view'
+import { motionTokens } from '../../theme/motion'
 import { slideIn, slideOut } from '../../lib/motion/slide'
-import { layoutTransition } from '../../lib/motion/layout'
 import type { FeedbackType } from '../../brand/types'
 
 export interface ToastOptions {
@@ -102,13 +103,8 @@ export function Toaster() {
       className="absolute inset-x-0 bottom-0 gap-2 px-4 pointer-events-box-none"
       style={{ paddingBottom: Math.max(16, insets.bottom) }}
     >
-      {visible.map((item) => (
-        <Animated.View
-          key={item.id}
-          entering={motionOn ? slideIn('up', reducedMotion, 0, 16) : FadeInUp.duration(reducedMotion ? 0 : 200)}
-          exiting={motionOn ? slideOut('up', reducedMotion, 16) : FadeOutDown.duration(reducedMotion ? 0 : 150)}
-          layout={motionOn ? layoutTransition() : undefined}
-        >
+      {visible.map((item) => {
+        const card = (
           <View
             testID={`toast-${item.id}`}
             dataSet={{ rendra: 'TST-001' }}
@@ -144,8 +140,30 @@ export function Toaster() {
               </Pressable>
             ) : null}
           </View>
-        </Animated.View>
-      ))}
+        )
+        // `on`: a entrada, o layout e a saída vêm da porta `MotionPresence` (valores animados no
+        // navegador, worklets no nativo). `off`: o `Animated.View` de sempre, com os mesmos builders.
+        return motionOn ? (
+          <MotionPresence
+            key={item.id}
+            testID={`toast-anim-${item.id}`}
+            layout
+            enter={(r) => slideIn('up', r, 0, 16)}
+            exit={(r) => slideOut('up', r, 16)}
+            webExit={(r) => (r ? FadeOut : FadeOutDown).duration(motionTokens.duration.fast)}
+          >
+            {card}
+          </MotionPresence>
+        ) : (
+          <Animated.View
+            key={item.id}
+            entering={FadeInUp.duration(reducedMotion ? 0 : 200)}
+            exiting={FadeOutDown.duration(reducedMotion ? 0 : 150)}
+          >
+            {card}
+          </Animated.View>
+        )
+      })}
     </View>
   )
 }

@@ -51,7 +51,7 @@ export function Alert({
   const isAssertive = type === 'error' || type === 'warning'
 
   return (
-    <MotionPresence enter={(reduced) => slideIn('down', reduced, 0, 8)} exit={fadeOut}>
+    <MotionPresence testID={testID ? `${testID}-anim` : undefined} enter={(reduced) => slideIn('down', reduced, 0, 8)} exit={fadeOut}>
     <View
       testID={testID}
       dataSet={{ rendra: 'ALRT-001' }}

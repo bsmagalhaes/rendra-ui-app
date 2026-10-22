@@ -36,7 +36,7 @@ export function EmptyState({
       dataSet={{ rendra: 'VAZ-001' }}
       className={cn('items-center justify-center gap-4', compact ? 'px-4 py-8' : 'px-4 py-12', className)}
     >
-      <MotionPresence enter={(r) => slideIn('up', r, stagger(0, r), 8)}>
+      <MotionPresence testID={testID ? `${testID}-anim-icone` : undefined} enter={(r) => slideIn('up', r, stagger(0, r), 8)}>
       <View className="relative items-center justify-center">
         <View
           aria-hidden
@@ -54,7 +54,7 @@ export function EmptyState({
         />
       </View>
       </MotionPresence>
-      <MotionPresence fillWidth enter={(r) => slideIn('up', r, stagger(1, r), 8)}>
+      <MotionPresence fillWidth testID={testID ? `${testID}-anim-titulo` : undefined} enter={(r) => slideIn('up', r, stagger(1, r), 8)}>
       <Text
         weight="semibold"
         accessibilityRole={a11yPresets.header.accessibilityRole}
@@ -64,12 +64,12 @@ export function EmptyState({
       </Text>
       </MotionPresence>
       {description ? (
-        <MotionPresence fillWidth enter={(r) => slideIn('up', r, stagger(2, r), 8)}>
+        <MotionPresence fillWidth testID={testID ? `${testID}-anim-descricao` : undefined} enter={(r) => slideIn('up', r, stagger(2, r), 8)}>
           <Text className="max-w-full break-words text-center text-sm text-muted-foreground">{description}</Text>
         </MotionPresence>
       ) : null}
       {actions ? (
-        <MotionPresence enter={(r) => slideIn('up', r, stagger(3, r), 8)}>
+        <MotionPresence testID={testID ? `${testID}-anim-acoes` : undefined} enter={(r) => slideIn('up', r, stagger(3, r), 8)}>
           <View className="flex-row flex-wrap justify-center gap-3">{actions}</View>
         </MotionPresence>
       ) : null}
